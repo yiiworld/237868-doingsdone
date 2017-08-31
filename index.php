@@ -15,13 +15,26 @@ $days_until_deadline = floor(($task_deadline_ts -$current_ts ) / 86400);
 
 $projects_list = ["Все", "Входящие", "Учеба", "Работа", "Домашние дела", "Авто"];
 $tasks_list = [
-  ["name" => "Собеседование в IT компании", "date" => "01.06.2018", "project" => "Работа", "completed" => false ],
-  ["name" => "Выполнить тестовое задание", "date" => "25.05.2018", "project" => "Работа", "completed" => false ],
-  ["name" => "Сделать задание первого раздела", "date" => "21.04.2018", "project" => "Учеба", "completed" => true ],
-  ["name" => "Встреча с другом", "date" => "22.04.2018", "project" => "Входящие", "completed" => false ],
-  ["name" => "Купить корм для кота", "date" => null, "project" => "Домашние дела", "completed" => false ],
-  ["name" => "Заказать пиццу", "date" => null, "project" => "Домашние дела", "completed" => false ]
+  ["name" => "Собеседование в IT компании", "date" => "01.06.2018", "category" => "Работа", "completed" => false ],
+  ["name" => "Выполнить тестовое задание", "date" => "25.05.2018", "category" => "Работа", "completed" => false ],
+  ["name" => "Сделать задание первого раздела", "date" => "21.04.2018", "category" => "Учеба", "completed" => true ],
+  ["name" => "Встреча с другом", "date" => "22.04.2018", "category" => "Входящие", "completed" => false ],
+  ["name" => "Купить корм для кота", "date" => null, "category" => "Домашние дела", "completed" => false ],
+  ["name" => "Заказать пиццу", "date" => null, "category" => "Домашние дела", "completed" => false ]
 ];
+
+function calc_number_of_tasks($tasks, $category) {
+  if ($category === "Все") {
+    $result = count($tasks);
+  } else {
+    $filtered_array = array_filter($tasks, function ($var) use($category) {
+      return $var["category"] === $category;
+    });
+    $result = count($filtered_array);
+  }
+  return $result;
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -69,7 +82,7 @@ $tasks_list = [
                       <?php foreach ($projects_list as $key => $value) : ?>
                         <li class="main-navigation__list-item <?php if ($key === 0): ?> main-navigation__list-item--active <?php endif; ?>">
                             <a class="main-navigation__list-item-link" href="#"><?=$value?></a>
-                            <span class="main-navigation__list-item-count">24</span>
+                            <span class="main-navigation__list-item-count"><?php print(calc_number_of_tasks($tasks_list, $value)) ?></span>
                         </li>
                       <?php endforeach; ?>
                     </ul>
