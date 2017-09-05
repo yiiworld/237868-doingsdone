@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
-    <title><?=$template_data[page_title]?></title>
+    <title><?=$page_title?></title>
     <link rel="stylesheet" href="css/normalize.css">
     <link rel="stylesheet" href="css/style.css">
 </head>
@@ -41,10 +41,10 @@
 
                 <nav class="main-navigation">
                     <ul class="main-navigation__list">
-                      <?php foreach ($template_data[projects_list] as $key => $value) : ?>
+                      <?php foreach ($projects_list as $key => $value) : ?>
                         <li class="main-navigation__list-item <?php if ($key === 0): ?> main-navigation__list-item--active <?php endif; ?>">
                             <a class="main-navigation__list-item-link" href="#"><?=htmlspecialchars($value)?></a>
-                            <span class="main-navigation__list-item-count"><?php print(calc_number_of_tasks($template_data[tasks_list], $value)) ?></span>
+                            <span class="main-navigation__list-item-count"><?php print(calc_number_of_tasks($tasks_list, $value)) ?></span>
                         </li>
                       <?php endforeach; ?>
                     </ul>
@@ -54,7 +54,7 @@
             </section>
 
             <main class="content__main">
-                <?=$template_data[page_main_content]?>
+                <?=$page_main_content?>
             </main>
         </div>
     </div>

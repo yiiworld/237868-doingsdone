@@ -1,4 +1,4 @@
-  <h2 class="content__main-heading">Список задач</h2>
+﻿  <h2 class="content__main-heading">Список задач</h2>
 
   <form class="search-form" action="index.php" method="post">
       <input class="search-form__input" type="text" name="" value="" placeholder="Поиск по задачам">
@@ -30,14 +30,14 @@
       </div>
 
       <label class="checkbox">
-          <input id="show-complete-tasks" class="checkbox__input visually-hidden" type="checkbox" <?php if ($template_data[show_complete_tasks] === 1) : ?> checked <?php endif; ?> >
+          <input id="show-complete-tasks" class="checkbox__input visually-hidden" type="checkbox" <?php if ($show_complete_tasks === 1) : ?> checked <?php endif; ?> >
           <span class="checkbox__text">Показывать выполненные</span>
       </label>
   </div>
 
   <table class="tasks">
-    <?php foreach ($template_data[tasks_list] as $key => $task): ?>
-      <?php if (!$task["completed"] or $template_data[show_complete_tasks] === 1) : ?>
+    <?php foreach ($tasks_list as $key => $task): ?>
+      <?php if (!$task["completed"] or $show_complete_tasks === 1) : ?>
         <tr class="tasks__item task <?php if ($task["completed"]):?> task--completed <?php endif;?> ">
             <td class="task__select">
                 <label class="checkbox task__checkbox">

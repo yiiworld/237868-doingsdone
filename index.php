@@ -41,6 +41,7 @@ $page_content = renderTemplate('./templates/index.php', [
   'tasks_list' => $tasks_list,
   'show_complete_tasks' => $show_complete_tasks
 ]);
+
 $layout_content = renderTemplate('./templates/layout.php', [
   'page_main_content' => $page_content,
   'page_title' => 'Дела в порядке!',
