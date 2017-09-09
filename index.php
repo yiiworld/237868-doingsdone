@@ -25,28 +25,25 @@ $tasks_list = [
   ["name" => "Заказать пиццу", "date" => null, "category" => "Домашние дела", "completed" => false ]
 ];
 
-function calc_number_of_tasks($tasks, $category) {
-  if ($category === "Все") {
-    $result = count($tasks);
-  } else {
-    $filtered_array = array_filter($tasks, function ($var) use($category) {
-      return $var["category"] === $category;
-    });
-    $result = count($filtered_array);
-  }
-  return $result;
+$project_id = isset($_GET['project']) ? $_GET['project'] : 0;
+
+if (!array_key_exists($project_id, $projects_list)) {
+  http_response_code(404);
+} else {
+  $filtered_tasks = find_project_tasks($tasks_list, $projects_list[$project_id]);
+
+  $page_content = renderTemplate('./templates/index.php', [
+    'tasks_list' => $filtered_tasks,
+    'show_complete_tasks' => $show_complete_tasks
+  ]);
+
+  $layout_content = renderTemplate('./templates/layout.php', [
+    'page_main_content' => $page_content,
+    'page_title' => 'Дела в порядке!',
+    'projects_list' => $projects_list,
+    'tasks_list' => $tasks_list,
+    'project_id' => $project_id
+  ]);
+  print($layout_content);
 }
-
-$page_content = renderTemplate('./templates/index.php', [
-  'tasks_list' => $tasks_list,
-  'show_complete_tasks' => $show_complete_tasks
-]);
-
-$layout_content = renderTemplate('./templates/layout.php', [
-  'page_main_content' => $page_content,
-  'page_title' => 'Дела в порядке!',
-  'projects_list' => $projects_list,
-  'tasks_list' => $tasks_list
-]);
-print($layout_content);
 ?>
