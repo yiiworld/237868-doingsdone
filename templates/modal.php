@@ -1,5 +1,5 @@
 <div class="modal">
-    <button class="modal__close" type="button" name="button">Закрыть</button>
+    <a href="/" class="modal__close">Закрыть</a>
 
     <h2 class="modal__heading">Добавление задачи</h2>
 
@@ -9,7 +9,7 @@
 
             <input class="form__input <?php if (isset($errors["name"])): ?> form__input--error <?php endif; ?>" type="text" name="name" id="name" value="<?=$data["name"]?>" placeholder="Введите название">
             <?php if (isset($errors["name"])): ?>
-              <span class="form__error"><?=$errors["name"]?></span>
+              <span class="form__message"><?=$errors["name"]?></span>
             <?php endif; ?>
         </div>
 
@@ -26,7 +26,7 @@
                <?php endforeach;?>
             </select>
             <?php if (isset($errors["project"])): ?>
-              <span class="form__error"><?=$errors["project"]?></span>
+              <span class="form__message"><?=$errors["project"]?></span>
             <?php endif; ?>
         </div>
 
@@ -34,7 +34,7 @@
             <label class="form__label" for="date">Дата выполнения <sup>*</sup></label>
             <input class="form__input form__input--date <?php if (isset($errors["date"])): ?> form__input--error <?php endif; ?>" type="text" name="date" id="date" value="<?=$data["date"]?>" placeholder="Введите дату в формате ДД.ММ.ГГГГ">
             <?php if (isset($errors["date"])): ?>
-              <span class="form__error"><?=$errors["date"]?></span>
+              <span class="form__message"><?=$errors["date"]?></span>
             <?php endif; ?>
         </div>
 
