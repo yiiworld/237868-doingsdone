@@ -16,7 +16,7 @@ function find_project_tasks($tasks, $category) {
     $result = $tasks;
   } else {
     $filtered_array = array_filter($tasks, function ($var) use($category) {
-      return $var["category"] === $category;
+      return $var["project"] === $category;
     });
     $result = $filtered_array;
   }
@@ -27,4 +27,28 @@ function calc_number_of_tasks($tasks, $category) {
   return count(find_project_tasks($tasks, $category));
 }
 
+function validateDate($value) {
+  if ($value)  {
+    $tmp = explode(".", $value);
+    if (!checkdate($tmp[1], $tmp[0], $tmp[2])) {
+      return "Введите дату в формате ДД.ММ.ГГГГ";
+    }
+  }
+}
+
+function validateForm($required, $rules, $data) {
+  $errors = [];
+  foreach ($data as $key => $value) {
+    if (in_array($key, $required) && $value == "") {
+      $errors[$key] = "Заполните это поле";
+    }
+    if (key_exists($key, $rules)) {
+      $error_text = call_user_func($rules[$key], $value);
+      if ($error_text) {
+        $errors[$key] = $error_text;
+      }
+    }
+  }
+  return $errors;
+}
 ?>
