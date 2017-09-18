@@ -2,7 +2,11 @@
 ini_set('display_errors',1);
 error_reporting(E_ALL);
 
+header('Content-Type: text/html; charset=utf-8');
+
+session_start();
 require_once('functions.php');
+require_once('userdata.php');
 
 // показывать или нет выполненные задачи
 $show_complete_tasks = rand(0, 1);
@@ -29,61 +33,113 @@ $tasks_list = [
 ];
 
 $project_id = isset($_GET['project']) ? $_GET['project'] : 0;
+
 $add = isset($_GET['add']);
+$login = isset($_GET['login']);
+$logout = isset($_GET['logout']);
 $errors = [];
+$show_modal = false;
 
-if (!array_key_exists($project_id, $projects_list)) {
-  http_response_code(404);
-} else {
-  $new_task_data = [
-    "name" => "",
-    "project" => $projects_list[0],
-    "date" => "",
-    "preview" => ""
-  ];
-  if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST)){
-    $required = ["name", "project", "date"];
-    $rules = ["date" => "validateDate"];
-    $new_task_data  = [
-      "name" => (isset($_POST["name"]) ? htmlspecialchars($_POST["name"]) : ""),
-      "project" => (isset($_POST["project"]) ? htmlspecialchars($_POST["project"]) : ""),
-      "date" => (isset($_POST["date"]) ? $_POST["date"] : ""),
-      "preview" => (isset($_POST["preview"]) ? $_POST["preview"] : ""),
-      "completed" => false
-    ];
+$new_task_data = [
+  "name" => "",
+  "project" => $projects_list[0],
+  "date" => "",
+  "preview" => ""
+];
+$required_task = ["name", "project", "date"];
+$rules_task = ["date" => "validateDate"];
 
-    $errors = validateForm($required, $rules, $new_task_data);
-    if (!count($errors)) {
-      if (isset($_FILES["preview"])) {
-         move_uploaded_file($_FILES["preview"]["tmp_name"],  __DIR__ . '/' . $_FILES["preview"]["name"]);
+$user = null;
+$userdata = [ "email" => "", "password" => ""];
+$required_user = ["email", "password"];
+$rules_user = ["email" => "validateEmail"];
+
+if ($logout) {
+  unset($_SESSION["user"]);
+  header("Location: /index.php");
+}
+
+if (isset($_SESSION["user"])) {
+  $user = $_SESSION["user"];
+  if (!array_key_exists($project_id, $projects_list)) {
+    http_response_code(404);
+  } else {
+    $filtered_tasks = find_project_tasks($tasks_list, $projects_list[$project_id]);
+
+    $page_content = renderTemplate('./templates/index.php', [
+      'tasks_list' => $filtered_tasks,
+      'show_complete_tasks' => $show_complete_tasks
+    ]);
+
+    if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST)) {
+      $new_task_data  = [
+        "name" => (isset($_POST["name"]) ? htmlspecialchars($_POST["name"]) : ""),
+        "project" => (isset($_POST["project"]) ? htmlspecialchars($_POST["project"]) : ""),
+        "date" => (isset($_POST["date"]) ? $_POST["date"] : ""),
+        "preview" => (isset($_POST["preview"]) ? $_POST["preview"] : ""),
+        "completed" => false
+      ];
+
+      $errors = validateForm($required_task, $rules_task, $new_task_data);
+      if (!count($errors)) {
+        if (isset($_FILES["preview"])) {
+           move_uploaded_file($_FILES["preview"]["tmp_name"],  __DIR__ . '/' . $_FILES["preview"]["name"]);
+        }
+        array_unshift($tasks_list, $new_task_data);
       }
-      array_unshift($tasks_list, $new_task_data);
+    }
+
+    $show_modal = $add || count($errors);
+    if ($show_modal) {
+      $modal_content = renderTemplate('./templates/modal.php', [
+        'data' => $new_task_data,
+        'projects_list' => $projects_list,
+        'errors' => $errors
+        ]);
+      print($modal_content);
+    }
+  }
+} else {
+  $page_content = renderTemplate('./templates/guest.php', []);
+
+  if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST)) {
+    $userdata = [
+      "email" => isset($_POST["email"]) ? $_POST["email"] : "",
+      "password" => isset($_POST["password"]) ? $_POST["password"] : ""
+    ];
+    $errors = validateForm($required_user, $rules_user, $userdata);
+    if (!count($errors)) {
+      if ($tmp_user = searchUserByEmail($userdata["email"], $users)) {
+        if (password_verify($userdata["password"], $tmp_user["password"])) {
+          $_SESSION["user"] = $tmp_user;
+          $user = $tmp_user;
+          header("Location: /index.php");
+        } else {
+          $errors["password"] = "Вы ввели неверный пароль";
+        }
+      }
     }
   }
 
-  $filtered_tasks = find_project_tasks($tasks_list, $projects_list[$project_id]);
-  $page_content = renderTemplate('./templates/index.php', [
-    'tasks_list' => $filtered_tasks,
-    'show_complete_tasks' => $show_complete_tasks
-  ]);
-
-  $layout_content = renderTemplate('./templates/layout.php', [
-    'page_main_content' => $page_content,
-    'page_title' => 'Дела в порядке!',
-    'projects_list' => $projects_list,
-    'tasks_list' => $tasks_list,
-    'project_id' => $project_id,
-    'overlay' => $add || count($errors)
-  ]);
-  print($layout_content);
-
-  if ($add || count($errors)) {
-    $modal_content = renderTemplate('./templates/modal.php', [
-      'data' => $new_task_data,
-      'projects_list' => $projects_list,
+  $show_modal = $login || count($errors);
+  if ($show_modal) {
+    $login_content = renderTemplate('./templates/login.php', [
+      'data' => $userdata,
       'errors' => $errors
     ]);
-    print($modal_content);
+    print($login_content);
   }
 }
+
+$layout_content = renderTemplate('./templates/layout.php', [
+  'page_main_content' => $page_content,
+  'page_title' => 'Дела в порядке!',
+  'projects_list' => $projects_list,
+  'tasks_list' => $tasks_list,
+  'project_id' => $project_id,
+  'overlay' => $show_modal,
+  'user' => $user
+]);
+print($layout_content);
+
 ?>
