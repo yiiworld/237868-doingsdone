@@ -31,14 +31,19 @@ $tasks_list = [
   ["name" => "Купить корм для кота", "date" => null, "project" => "Домашние дела", "completed" => false ],
   ["name" => "Заказать пиццу", "date" => null, "project" => "Домашние дела", "completed" => false ]
 ];
+$filtered_tasks = [];
 
+$page_content = null;
+
+// параметры запроса
 $project_id = isset($_GET['project']) ? $_GET['project'] : 0;
-
 $add = isset($_GET['add']);
 $login = isset($_GET['login']);
-$errors = [];
-$show_modal = false;
 
+$errors = [];
+$show_modal = false; // показывать ли модальное окно
+
+// данные для создания нового задания
 $new_task_data = [
   "name" => "",
   "project" => $projects_list[0],
@@ -48,6 +53,7 @@ $new_task_data = [
 $required_task = ["name", "project", "date"];
 $rules_task = ["date" => "validateDate"];
 
+// данные для аутентификации
 $user = null;
 $userdata = [ "email" => "", "password" => ""];
 $required_user = ["email", "password"];
@@ -55,47 +61,51 @@ $rules_user = ["email" => "validateEmail"];
 
 if (isset($_SESSION["user"])) {
   $user = $_SESSION["user"];
+
   if (!array_key_exists($project_id, $projects_list)) {
     http_response_code(404);
-  } else {
-    $filtered_tasks = find_project_tasks($tasks_list, $projects_list[$project_id]);
+    exit;
+  }
 
-    $page_content = renderTemplate('./templates/index.php', [
-      'tasks_list' => $filtered_tasks,
-      'show_complete_tasks' => $show_complete_tasks
-    ]);
+  // сохранение новой задачи
+  if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST)) {
+    $new_task_data  = [
+      "name" => (isset($_POST["name"]) ? htmlspecialchars($_POST["name"]) : ""),
+      "project" => (isset($_POST["project"]) ? htmlspecialchars($_POST["project"]) : ""),
+      "date" => (isset($_POST["date"]) ? $_POST["date"] : ""),
+      "preview" => (isset($_POST["preview"]) ? $_POST["preview"] : ""),
+      "completed" => false
+    ];
 
-    if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST)) {
-      $new_task_data  = [
-        "name" => (isset($_POST["name"]) ? htmlspecialchars($_POST["name"]) : ""),
-        "project" => (isset($_POST["project"]) ? htmlspecialchars($_POST["project"]) : ""),
-        "date" => (isset($_POST["date"]) ? $_POST["date"] : ""),
-        "preview" => (isset($_POST["preview"]) ? $_POST["preview"] : ""),
-        "completed" => false
-      ];
-
-      $errors = validateForm($required_task, $rules_task, $new_task_data);
-      if (!count($errors)) {
-        if (isset($_FILES["preview"])) {
-           move_uploaded_file($_FILES["preview"]["tmp_name"],  __DIR__ . '/' . $_FILES["preview"]["name"]);
-        }
-        array_unshift($tasks_list, $new_task_data);
+    $errors = validateForm($required_task, $rules_task, $new_task_data);
+    if (!count($errors)) {
+      if (isset($_FILES["preview"])) {
+         move_uploaded_file($_FILES["preview"]["tmp_name"],  __DIR__ . '/' . $_FILES["preview"]["name"]);
       }
+      array_unshift($tasks_list, $new_task_data);
     }
+  }
 
-    $show_modal = $add || count($errors);
-    if ($show_modal) {
-      $modal_content = renderTemplate('./templates/modal.php', [
-        'data' => $new_task_data,
-        'projects_list' => $projects_list,
-        'errors' => $errors
-        ]);
-      print($modal_content);
-    }
+  $filtered_tasks = find_project_tasks($tasks_list, $projects_list[$project_id]);
+  $page_content = renderTemplate('./templates/index.php', [
+    'tasks_list' => $filtered_tasks,
+    'show_complete_tasks' => $show_complete_tasks
+  ]);
+
+  // модальное окно добавления задачи
+  $show_modal = $add || count($errors);
+  if ($show_modal) {
+    $modal_content = renderTemplate('./templates/modal.php', [
+      'data' => $new_task_data,
+      'projects_list' => $projects_list,
+      'errors' => $errors
+      ]);
+    print($modal_content);
   }
 } else {
   $page_content = renderTemplate('./templates/guest.php', []);
 
+ // аутентификация
   if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST)) {
     $userdata = [
       "email" => isset($_POST["email"]) ? $_POST["email"] : "",
@@ -103,18 +113,18 @@ if (isset($_SESSION["user"])) {
     ];
     $errors = validateForm($required_user, $rules_user, $userdata);
     if (!count($errors)) {
-      if ($tmp_user = searchUserByEmail($userdata["email"], $users)) {
-        if (password_verify($userdata["password"], $tmp_user["password"])) {
-          $_SESSION["user"] = $tmp_user;
-          $user = $tmp_user;
-          header("Location: /index.php");
-        } else {
-          $errors["password"] = "Вы ввели неверный пароль";
-        }
+      $tmp_user = searchUserByEmail($userdata["email"], $users);
+      if ($tmp_user && password_verify($userdata["password"], $tmp_user["password"])) {
+        $_SESSION["user"] = $tmp_user;
+        header("Location: /index.php");
+      } else {
+        $errors["email"] = "Вы ввели неверные данные";
+        $errors["password"] = "Вы ввели неверные данные";
       }
     }
   }
 
+  // модальное окно логина
   $show_modal = $login || count($errors);
   if ($show_modal) {
     $login_content = renderTemplate('./templates/login.php', [
