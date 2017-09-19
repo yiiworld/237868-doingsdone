@@ -58,6 +58,13 @@ $user = [ "email" => "", "password" => ""];
 $required_user = ["email", "password"];
 $rules_user = ["email" => "validateEmail"];
 
+if (isset($_GET['show_completed'])) {
+  setcookie('showCompleteTasks', $_GET['show_completed']);
+  $header_line = "Location: /index.php" . (isset($_GET['project']) ? '?project=' . $_GET['project'] : '');
+  header($header_line);
+  exit;
+}
+
 if (isset($_SESSION["user"])) {
   if (!array_key_exists($project_id, $projects_list)) {
     http_response_code(404);
