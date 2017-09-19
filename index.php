@@ -8,9 +8,6 @@ session_start();
 require_once('functions.php');
 require_once('userdata.php');
 
-// показывать или нет выполненные задачи
-$show_complete_tasks = rand(0, 1);
-
 // устанавливаем часовой пояс в Московское время
 date_default_timezone_set('Europe/Moscow');
 
@@ -36,7 +33,7 @@ $filtered_tasks = [];
 $page_content = null;
 
 // параметры запроса
-$project_id = isset($_GET['project']) ? $_GET['project'] : 0;
+$project_id = isset($_GET['project']) ? (int) $_GET['project'] : 0;
 $add = isset($_GET['add']);
 $login = isset($_GET['login']);
 
@@ -70,6 +67,9 @@ if (isset($_SESSION["user"])) {
     http_response_code(404);
     exit;
   }
+  
+  // показывать или нет выполненные задачи
+  $show_complete_tasks = isset($_COOKIE['showCompleteTasks']) ? (int) $_COOKIE['showCompleteTasks'] === 1 : false;
 
   // сохранение новой задачи
   if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST)) {
@@ -89,7 +89,6 @@ if (isset($_SESSION["user"])) {
       array_unshift($tasks_list, $new_task_data);
     }
   }
-
   $filtered_tasks = find_project_tasks($tasks_list, $projects_list[$project_id]);
   $page_content = renderTemplate('./templates/index.php', [
     'tasks_list' => $filtered_tasks,
