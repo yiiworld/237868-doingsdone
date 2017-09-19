@@ -54,14 +54,11 @@ $required_task = ["name", "project", "date"];
 $rules_task = ["date" => "validateDate"];
 
 // данные для аутентификации
-$user = null;
-$userdata = [ "email" => "", "password" => ""];
+$user = [ "email" => "", "password" => ""];
 $required_user = ["email", "password"];
 $rules_user = ["email" => "validateEmail"];
 
 if (isset($_SESSION["user"])) {
-  $user = $_SESSION["user"];
-
   if (!array_key_exists($project_id, $projects_list)) {
     http_response_code(404);
     exit;
@@ -107,14 +104,14 @@ if (isset($_SESSION["user"])) {
 
  // аутентификация
   if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST)) {
-    $userdata = [
+    $user = [
       "email" => isset($_POST["email"]) ? $_POST["email"] : "",
       "password" => isset($_POST["password"]) ? $_POST["password"] : ""
     ];
-    $errors = validateForm($required_user, $rules_user, $userdata);
+    $errors = validateForm($required_user, $rules_user, $user);
     if (!count($errors)) {
-      $tmp_user = searchUserByEmail($userdata["email"], $users);
-      if ($tmp_user && password_verify($userdata["password"], $tmp_user["password"])) {
+      $tmp_user = searchUserByEmail($user["email"], $users);
+      if ($tmp_user && password_verify($user["password"], $tmp_user["password"])) {
         $_SESSION["user"] = $tmp_user;
         header("Location: /index.php");
       } else {
@@ -128,7 +125,7 @@ if (isset($_SESSION["user"])) {
   $show_modal = $login || count($errors);
   if ($show_modal) {
     $login_content = renderTemplate('./templates/login.php', [
-      'data' => $userdata,
+      'data' => $user,
       'errors' => $errors
     ]);
     print($login_content);
@@ -142,7 +139,7 @@ $layout_content = renderTemplate('./templates/layout.php', [
   'tasks_list' => $tasks_list,
   'project_id' => $project_id,
   'overlay' => $show_modal,
-  'user' => $user
+  'user' => isset($_SESSION["user"]) ? $_SESSION["user"] : null
 ]);
 print($layout_content);
 
