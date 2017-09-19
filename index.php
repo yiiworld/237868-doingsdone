@@ -36,7 +36,6 @@ $project_id = isset($_GET['project']) ? $_GET['project'] : 0;
 
 $add = isset($_GET['add']);
 $login = isset($_GET['login']);
-$logout = isset($_GET['logout']);
 $errors = [];
 $show_modal = false;
 
@@ -53,11 +52,6 @@ $user = null;
 $userdata = [ "email" => "", "password" => ""];
 $required_user = ["email", "password"];
 $rules_user = ["email" => "validateEmail"];
-
-if ($logout) {
-  unset($_SESSION["user"]);
-  header("Location: /index.php");
-}
 
 if (isset($_SESSION["user"])) {
   $user = $_SESSION["user"];

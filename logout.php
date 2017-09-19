@@ -1,4 +1,5 @@
 <?php
+session_start();
 unset($_SESSION["user"]);
-header("Location: /index.php?logout");
+header("Location: /index.php");
 ?>
