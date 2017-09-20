@@ -36,6 +36,12 @@ function validateDate($value) {
   }
 }
 
+function validateEmail($value) {
+  if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
+    return "E-mail введён некорректно";
+  }
+}
+
 function validateForm($required, $rules, $data) {
   $errors = [];
   foreach ($data as $key => $value) {
@@ -50,5 +56,16 @@ function validateForm($required, $rules, $data) {
     }
   }
   return $errors;
+}
+
+function searchUserByEmail($email, $users) {
+  $result = null;
+  foreach ($users as $user) {
+    if ($user["email"] == $email) {
+      $result = $user;
+      break;
+    }
+  }
+  return $result;
 }
 ?>

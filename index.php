@@ -2,7 +2,11 @@
 ini_set('display_errors',1);
 error_reporting(E_ALL);
 
+header('Content-Type: text/html; charset=utf-8');
+
+session_start();
 require_once('functions.php');
+require_once('userdata.php');
 
 // показывать или нет выполненные задачи
 $show_complete_tasks = rand(0, 1);
@@ -27,23 +31,41 @@ $tasks_list = [
   ["name" => "Купить корм для кота", "date" => null, "project" => "Домашние дела", "completed" => false ],
   ["name" => "Заказать пиццу", "date" => null, "project" => "Домашние дела", "completed" => false ]
 ];
+$filtered_tasks = [];
 
+$page_content = null;
+
+// параметры запроса
 $project_id = isset($_GET['project']) ? $_GET['project'] : 0;
 $add = isset($_GET['add']);
-$errors = [];
+$login = isset($_GET['login']);
 
-if (!array_key_exists($project_id, $projects_list)) {
-  http_response_code(404);
-} else {
-  $new_task_data = [
-    "name" => "",
-    "project" => $projects_list[0],
-    "date" => "",
-    "preview" => ""
-  ];
-  if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST)){
-    $required = ["name", "project", "date"];
-    $rules = ["date" => "validateDate"];
+$errors = [];
+$show_modal = false; // показывать ли модальное окно
+
+// данные для создания нового задания
+$new_task_data = [
+  "name" => "",
+  "project" => $projects_list[0],
+  "date" => "",
+  "preview" => ""
+];
+$required_task = ["name", "project", "date"];
+$rules_task = ["date" => "validateDate"];
+
+// данные для аутентификации
+$user = [ "email" => "", "password" => ""];
+$required_user = ["email", "password"];
+$rules_user = ["email" => "validateEmail"];
+
+if (isset($_SESSION["user"])) {
+  if (!array_key_exists($project_id, $projects_list)) {
+    http_response_code(404);
+    exit;
+  }
+
+  // сохранение новой задачи
+  if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST)) {
     $new_task_data  = [
       "name" => (isset($_POST["name"]) ? htmlspecialchars($_POST["name"]) : ""),
       "project" => (isset($_POST["project"]) ? htmlspecialchars($_POST["project"]) : ""),
@@ -52,7 +74,7 @@ if (!array_key_exists($project_id, $projects_list)) {
       "completed" => false
     ];
 
-    $errors = validateForm($required, $rules, $new_task_data);
+    $errors = validateForm($required_task, $rules_task, $new_task_data);
     if (!count($errors)) {
       if (isset($_FILES["preview"])) {
          move_uploaded_file($_FILES["preview"]["tmp_name"],  __DIR__ . '/' . $_FILES["preview"]["name"]);
@@ -67,23 +89,58 @@ if (!array_key_exists($project_id, $projects_list)) {
     'show_complete_tasks' => $show_complete_tasks
   ]);
 
-  $layout_content = renderTemplate('./templates/layout.php', [
-    'page_main_content' => $page_content,
-    'page_title' => 'Дела в порядке!',
-    'projects_list' => $projects_list,
-    'tasks_list' => $tasks_list,
-    'project_id' => $project_id,
-    'overlay' => $add || count($errors)
-  ]);
-  print($layout_content);
-
-  if ($add || count($errors)) {
+  // модальное окно добавления задачи
+  $show_modal = $add || count($errors);
+  if ($show_modal) {
     $modal_content = renderTemplate('./templates/modal.php', [
       'data' => $new_task_data,
       'projects_list' => $projects_list,
       'errors' => $errors
-    ]);
+      ]);
     print($modal_content);
   }
+} else {
+  $page_content = renderTemplate('./templates/guest.php', []);
+
+ // аутентификация
+  if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST)) {
+    $user = [
+      "email" => isset($_POST["email"]) ? $_POST["email"] : "",
+      "password" => isset($_POST["password"]) ? $_POST["password"] : ""
+    ];
+    $errors = validateForm($required_user, $rules_user, $user);
+    if (!count($errors)) {
+      $tmp_user = searchUserByEmail($user["email"], $users);
+      if ($tmp_user && password_verify($user["password"], $tmp_user["password"])) {
+        $_SESSION["user"] = $tmp_user;
+        header("Location: /index.php");
+      } else {
+        $errors["email"] = "Вы ввели неверные данные";
+        $errors["password"] = "Вы ввели неверные данные";
+      }
+    }
+  }
+
+  // модальное окно логина
+  $show_modal = $login || count($errors);
+  if ($show_modal) {
+    $login_content = renderTemplate('./templates/login.php', [
+      'data' => $user,
+      'errors' => $errors
+    ]);
+    print($login_content);
+  }
 }
+
+$layout_content = renderTemplate('./templates/layout.php', [
+  'page_main_content' => $page_content,
+  'page_title' => 'Дела в порядке!',
+  'projects_list' => $projects_list,
+  'tasks_list' => $tasks_list,
+  'project_id' => $project_id,
+  'overlay' => $show_modal,
+  'user' => isset($_SESSION["user"]) ? $_SESSION["user"] : null
+]);
+print($layout_content);
+
 ?>
