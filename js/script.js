@@ -20,6 +20,7 @@ var $checkbox = document.getElementsByClassName('checkbox__input')[0];
 
 $checkbox.addEventListener('change', function(event) {
   var is_checked = +event.target.checked;
-
-  window.location = '/index.php?show_completed=' + is_checked;
+  var searchParams = new URLSearchParams(window.location.search);
+  var project_id = searchParams.get("project");
+  window.location = '/index.php?show_completed=' + is_checked + (project_id ? '&project=' + project_id : '');
 });

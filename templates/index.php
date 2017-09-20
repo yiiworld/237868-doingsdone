@@ -31,14 +31,14 @@
       </div>
 
       <label class="checkbox">
-          <input id="show-complete-tasks" class="checkbox__input visually-hidden" type="checkbox" <?php if ($show_complete_tasks === 1) : ?> checked <?php endif; ?> >
+          <input id="show-complete-tasks" class="checkbox__input visually-hidden" type="checkbox" <?php if ($show_complete_tasks) : ?> checked <?php endif; ?> >
           <span class="checkbox__text">Показывать выполненные</span>
       </label>
   </div>
 
   <table class="tasks">
     <?php foreach ($tasks_list as $key => $task): ?>
-      <?php if (!$task["completed"] or $show_complete_tasks === 1) : ?>
+      <?php if (!$task["completed"] or $show_complete_tasks) : ?>
         <tr class="tasks__item task <?php if ($task["completed"]):?> task--completed <?php endif;?> ">
             <td class="task__select">
                 <label class="checkbox task__checkbox">
