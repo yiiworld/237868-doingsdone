@@ -122,3 +122,18 @@ INSERT INTO tasks SET
   name = "Заказать пиццу",
   project_id = 15,
   user_id = 2;
+
+-- получить список из всех проектов для одного пользователя;
+SELECT * FROM projects WHERE user_id = 1;
+
+-- получить список из всех задач для одного проекта;
+SELECT * FROM tasks WHERE project_id = 13 AND user_id = 1;
+
+-- пометить задачу как выполненную;
+UPDATE tasks SET completed_at = '24.05.2018' WHERE id = 4;
+
+-- получить все задачи для завтрашнего дня;
+SELECT * FROM tasks WHERE complete_until = CURDATE() + INTERVAL 1 DAY;
+
+-- обновить название задачи по её идентификатору.
+UPDATE tasks SET name = "Новое название" WHERE id = 1;
