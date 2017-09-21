@@ -15,7 +15,8 @@ CREATE UNIQUE INDEX email_users ON users(email);
 CREATE TABLE projects (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name CHAR(128) NOT NULL,
-  user_id INT NOT NULL
+  user_id INT NOT NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
 CREATE UNIQUE INDEX project_projects ON projects(name, user_id);
@@ -29,7 +30,9 @@ CREATE TABLE tasks (
   file TEXT,
   complete_until DATETIME,
   user_id INT NOT NULL,
-  project_id INT NOT NULL
+  project_id INT NOT NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id),
+  FOREIGN KEY (project_id) REFERENCES projects(id)
 );
 
 CREATE INDEX user_tasks ON tasks(user_id);
