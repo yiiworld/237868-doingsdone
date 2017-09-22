@@ -1,5 +1,5 @@
 <?php
-$connect = mysqli_connect('localhost', 'root', '1', 'doingsdone');
+$connect = mysqli_connect('localhost', 'root', '', 'doingsdone');
 
 if ($connect === false) {
   $error = "Ошибка подключения: " . mysqli_connect_error();
