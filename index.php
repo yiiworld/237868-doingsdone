@@ -7,6 +7,8 @@ header('Content-Type: text/html; charset=utf-8');
 session_start();
 require_once('functions.php');
 require_once('userdata.php');
+require_once('mysql_helper.php');
+require_once('init.php');
 
 // устанавливаем часовой пояс в Московское время
 date_default_timezone_set('Europe/Moscow');
@@ -67,7 +69,7 @@ if (isset($_SESSION["user"])) {
     http_response_code(404);
     exit;
   }
-  
+
   // показывать или нет выполненные задачи
   $show_complete_tasks = isset($_COOKIE['showCompleteTasks']) ? (int) $_COOKIE['showCompleteTasks'] === 1 : false;
 
