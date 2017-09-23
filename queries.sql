@@ -41,7 +41,7 @@ INSERT INTO tasks (name, complete_until, completed_at, project_id, user_id) VALU
   ("Купить корм для кота", NULL, NULL, 15, 3),
   ("Заказать пиццу", NULL, NULL, 13, 1),
   ("Заказать пиццу", NULL, NULL, 14, 2),
-  ("Заказать пиццу", NULL, NULL, 15, 2);
+  ("Заказать пиццу", NULL, NULL, 15, 3);
 
 -- получить список из всех проектов для одного пользователя;
 SELECT * FROM projects WHERE user_id = 1;

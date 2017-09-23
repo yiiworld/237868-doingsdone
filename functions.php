@@ -13,20 +13,19 @@ function renderTemplate ($template_path, $template_data) {
   return $result;
 }
 
-function find_project_tasks($tasks, $category) {
-  if ($category === "Все") {
-    $result = $tasks;
+function find_project_tasks($connection, $project_id, $user, $tasks) {
+  $result = [];
+  if ($project_id) {
+    $sql = "SELECT name, complete_until, completed_at FROM tasks WHERE project_id = ?";
+    $result = selectData($connection, $sql, [$project_id]);
   } else {
-    $filtered_array = array_filter($tasks, function ($var) use($category) {
-      return $var["project"] === $category;
-    });
-    $result = $filtered_array;
+    $result = $tasks;
   }
   return $result;
 }
 
-function calc_number_of_tasks($tasks, $category) {
-  return count(find_project_tasks($tasks, $category));
+function calc_number_of_tasks($connection, $project_id, $user, $tasks) {
+  return count(find_project_tasks($connection, $project_id, $user, $tasks));
 }
 
 function validateDate($value) {

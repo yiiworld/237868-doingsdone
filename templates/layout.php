@@ -53,10 +53,15 @@
 
                 <nav class="main-navigation">
                     <ul class="main-navigation__list">
-                      <?php foreach ($projects_list as $key => $value) : ?>
-                        <li class="main-navigation__list-item <?php if ($key == $project_id): ?> main-navigation__list-item--active <?php endif; ?>">
-                            <a href="?project=<?=$key?>" class="main-navigation__list-item-link" href="#"><?=htmlspecialchars($value)?></a>
-                            <span class="main-navigation__list-item-count"><?php print(calc_number_of_tasks($tasks_list, $value)) ?></span>
+                      <?php foreach ($projects_list as $project) : ?>
+                        <li class="main-navigation__list-item <?php if ($project["id"] == $project_id): ?> main-navigation__list-item--active <?php endif; ?>">
+                            <a href="?project=<?=$project["id"]?>" class="main-navigation__list-item-link" href="#"><?=htmlspecialchars($project["name"])?></a>
+                            <span class="main-navigation__list-item-count">
+                              <?php
+                                $id = $project["name"] !== "Все" ? $project["id"] : null;
+                                print(calc_number_of_tasks($connection, $id, $user, $tasks_list))
+                              ?>
+                            </span>
                         </li>
                       <?php endforeach; ?>
                     </ul>

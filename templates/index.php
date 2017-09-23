@@ -37,16 +37,16 @@
   </div>
 
   <table class="tasks">
-    <?php foreach ($tasks_list as $key => $task): ?>
-      <?php if (!$task["completed"] or $show_complete_tasks) : ?>
-        <tr class="tasks__item task <?php if ($task["completed"]):?> task--completed <?php endif;?> ">
+    <?php foreach ($tasks_list as $task): ?>
+      <?php if (!$task["completed_at"] or $show_complete_tasks) : ?>
+        <tr class="tasks__item task <?php if ($task["completed_at"]):?> task--completed <?php endif;?> ">
             <td class="task__select">
                 <label class="checkbox task__checkbox">
-                    <input class="checkbox__input visually-hidden" type="checkbox" <?php if ($task["completed"]):?> checked <?php endif;?> >
+                    <input class="checkbox__input visually-hidden" type="checkbox" <?php if ($task["completed_at"]):?> checked <?php endif;?> >
                     <span class="checkbox__text"><?=htmlspecialchars($task["name"])?></span>
                 </label>
             </td>
-            <td class="task__date"><?=$task["date"]?></td>
+            <td class="task__date"><?=$task["complete_until"]?></td>
 
             <td class="task__controls">
               <button class="expand-control" type="button" name="button">Выполнить первое задание</button>
