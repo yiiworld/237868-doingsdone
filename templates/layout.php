@@ -8,11 +8,12 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 
-<body class="<?php if ($overlay): ?>overlay<?php endif; ?> <?php if (!isset($user)): ?>body-background<?php endif; ?>" >
+<body class="<?php if ($overlay): ?>overlay<?php endif; ?>
+             <?php if (!isset($user) && !$register): ?>body-background<?php endif; ?>" >
 <h1 class="visually-hidden">Дела в порядке</h1>
 
 <div class="page-wrapper">
-    <div class="container <?php if (isset($user)): ?> container--with-sidebar <?php endif; ?>">
+    <div class="container <?php if (isset($user) || $register): ?> container--with-sidebar <?php endif; ?>">
         <header class="main-header">
           <?php if (isset($user)): ?>
             <a href="#">
@@ -38,10 +39,11 @@
             <a href="#">
               <img src="../img/logo.png" width="153" height="42" alt="Логитип Дела в порядке">
             </a>
-
-            <div class="main-header__side">
-              <a class="main-header__side-item button button--transparent" href="./?login">Войти</a>
-            </div>
+            <?php if (!$register): ?>
+              <div class="main-header__side">
+                <a class="main-header__side-item button button--transparent" href="./?login">Войти</a>
+              </div>
+            <?php endif; ?>
           <?php endif; ?>
         </header>
 
@@ -68,6 +70,12 @@
                 </nav>
 
                 <a class="button button--transparent button--plus content__side-button" href="#">Добавить проект</a>
+            </section>
+          <?php elseif ($register): ?>
+            <section class="content__side">
+              <p class="content__side-info">Если у вас уже есть аккаунт, авторизуйтесь на сайте</p>
+
+              <a class="button button--transparent content__side-button" href="./?login">Войти</a>
             </section>
           <?php endif; ?>
 

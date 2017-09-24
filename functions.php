@@ -1,6 +1,14 @@
 <?php
 require_once('mysql_helper.php');
 
+/**
+* Функция шаблонизации
+*
+* @param string $template_path Путь к шаблону
+* @param array $template_data Данные для заполнения шаблона
+*
+* @return array $result Результирующий код шаблона
+*/
 function renderTemplate ($template_path, $template_data) {
   if (file_exists($template_path)) {
     extract($template_data);
@@ -13,6 +21,16 @@ function renderTemplate ($template_path, $template_data) {
   return $result;
 }
 
+/**
+* Поиск задач в заданной категории
+*
+* @param resource $connection Ресурс соединения
+* @param integer $project_id Id категории
+* @param array $user Данные текущего пользователя
+* @param array $tasks Массив со всеми заданиями
+*
+* @return array $result Результат запроса данных
+*/
 function find_project_tasks($connection, $project_id, $user, $tasks) {
   $result = [];
   if ($project_id) {
@@ -24,10 +42,27 @@ function find_project_tasks($connection, $project_id, $user, $tasks) {
   return $result;
 }
 
+/**
+* Подстчет количества задач в заданной категории
+*
+* @param resource $connection Ресурс соединения
+* @param integer $project_id Id категории
+* @param array $user Данные текущего пользователя
+* @param array $tasks Массив со всеми заданиями
+*
+* @return integer Количество задач в категории
+*/
 function calc_number_of_tasks($connection, $project_id, $user, $tasks) {
   return count(find_project_tasks($connection, $project_id, $user, $tasks));
 }
 
+/**
+* Проверка корректности и соответствия формату ДД.ММ.ГГГГ введённой даты
+*
+* @param string $value Дата для проверки
+*
+* @return string Текст возникшей ошибки
+*/
 function validateDate($value) {
   if ($value)  {
     $tmp = explode(".", $value);
@@ -37,12 +72,28 @@ function validateDate($value) {
   }
 }
 
+/**
+* Проверка корректности введённого email
+*
+* @param string $value Email для проверки
+*
+* @return string Текст возникшей ошибки
+*/
 function validateEmail($value) {
   if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
     return "E-mail введён некорректно";
   }
 }
 
+/**
+* Проверка корректности заполнения формы
+*
+* @param resource $required Список обязательных полей
+* @param string $rules Правила проверки полей
+* @param array $data Данные для проверки
+*
+* @return array $errors Список возникших ошибок
+*/
 function validateForm($required, $rules, $data) {
   $errors = [];
   foreach ($data as $key => $value) {
@@ -59,15 +110,18 @@ function validateForm($required, $rules, $data) {
   return $errors;
 }
 
-function searchUserByEmail($email, $users) {
-  $result = null;
-  foreach ($users as $user) {
-    if ($user["email"] == $email) {
-      $result = $user;
-      break;
-    }
-  }
-  return $result;
+/**
+* Поиск пользователя по email
+*
+* @param resource $connection Ресурс соединения
+* @param string $email Email пользователя
+*
+* @return array $result Найденный пользователь
+*/
+function searchUserByEmail($connection, $email) {
+  return $user = selectData($connection,
+    "SELECT * FROM users WHERE email = ?",
+    [$email]);
 }
 
 /**

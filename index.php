@@ -16,11 +16,13 @@ $projects_list = [];
 $tasks_list = [];
 $filtered_tasks = [];
 $page_content = null;
+$current_user = null;
 
 // параметры запроса
 $project_id = isset($_GET['project']) ? (int) $_GET['project'] : 0;
 $add = isset($_GET['add']);
 $login = isset($_GET['login']);
+$register = isset($_GET['register']) || isset($_POST['register']);
 
 $errors = [];
 $show_modal = false; // показывать ли модальное окно
@@ -42,10 +44,9 @@ if (isset($_GET['show_completed'])) {
 }
 
 if (isset($_SESSION["user"])) {
-  $current_user = selectData($connection, "SELECT * FROM users WHERE `email` = ?", [$_SESSION["user"]["email"]]);
-  $current_user = $current_user[0];
+  $current_user = selectData($connection, "SELECT * FROM users WHERE email = ?", [$_SESSION["user"]["email"]])[0];
   $projects_list = selectData($connection, "SELECT * FROM projects WHERE user_id = ?", [$current_user["id"]]);
-
+  $default_project = isset($projects_list[0]) ? $projects_list[0] : '';
 
   if ($project_id) {
     $is_project_exists = false;
@@ -72,7 +73,7 @@ if (isset($_SESSION["user"])) {
   // данные для создания нового задания
   $new_task_data  = [
     "name" => (isset($_POST["name"]) ? htmlspecialchars($_POST["name"]) : ""),
-    "project" => (isset($_POST["project"]) ? htmlspecialchars($_POST["project"]) : $projects_list[0]),
+    "project" => (isset($_POST["project"]) ? htmlspecialchars($_POST["project"]) : $default_project),
     "date" => (isset($_POST["date"]) ? $_POST["date"] : ""),
     "preview" => (isset($_POST["preview"]) ? $_POST["preview"] : ""),
     "completed" => false
@@ -105,35 +106,66 @@ if (isset($_SESSION["user"])) {
     print($modal_content);
   }
 } else {
-  $page_content = renderTemplate('./templates/guest.php', []);
-
- // аутентификация
-  if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST)) {
+  if ($register) {
     $user = [
-      "email" => isset($_POST["email"]) ? $_POST["email"] : "",
-      "password" => isset($_POST["password"]) ? $_POST["password"] : ""
+      "email" => isset($_POST["email"]) ? htmlspecialchars($_POST["email"]) : "",
+      "form_password" => isset($_POST["form_password"]) ? htmlspecialchars($_POST["form_password"]) : "",
+      "name" => isset($_POST["name"]) ?  htmlspecialchars($_POST["name"]) : ""
     ];
-    $errors = validateForm($required_user, $rules_user, $user);
-    if (!count($errors)) {
-      $tmp_user = searchUserByEmail($user["email"], $users);
-      if ($tmp_user && password_verify($user["password"], $tmp_user["password"])) {
-        $_SESSION["user"] = $tmp_user;
-        header("Location: /index.php");
-      } else {
-        $errors["email"] = "Вы ввели неверные данные";
-        $errors["password"] = "Вы ввели неверные данные";
+    if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["register"])) {
+      $required_user = ["email", "password", "name"];
+      $errors = validateForm($required_user, $rules_user, $user);
+      if (!count($errors)) {
+        if (!searchUserByEmail($connection, $user["email"])) {
+          $user["password"] = password_hash($user["form_password"], PASSWORD_DEFAULT);
+          unset($user["form_password"]);
+          $insert_result = insertData($connection, "users", $user);
+          if ($insert_result) {
+            header("Location: /index.php?login&just_registered");
+          } else {
+            $errors["email"] = "Ошибка сохранения. Повторите регистрацию ещё раз.";
+          }
+        } else {
+          $errors["email"] = "Пользователь с таким email уже существует.";
+        }
       }
     }
-  }
 
-  // модальное окно логина
-  $show_modal = $login || count($errors);
-  if ($show_modal) {
-    $login_content = renderTemplate('./templates/login.php', [
+    $page_content = renderTemplate('./templates/register.php', [
       'data' => $user,
       'errors' => $errors
     ]);
-    print($login_content);
+  } else {
+    $page_content = renderTemplate('./templates/guest.php', []);
+
+   // аутентификация
+    if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["login"])) {
+      $user = [
+        "email" => isset($_POST["email"]) ? htmlspecialchars($_POST["email"]) : "",
+        "password" => isset($_POST["password"]) ? htmlspecialchars($_POST["password"]) : ""
+      ];
+      $errors = validateForm($required_user, $rules_user, $user);
+      if (!count($errors)) {
+        $tmp_user = searchUserByEmail($connection, $user["email"])[0];
+        if ($tmp_user && password_verify($user["password"], $tmp_user["password"])) {
+          $_SESSION["user"] = $tmp_user;
+          header("Location: /index.php");
+        } else {
+          $errors["email"] = "Вы ввели неверные данные";
+          $errors["password"] = "Вы ввели неверные данные";
+        }
+      }
+    }
+
+    // модальное окно логина
+    if ($login || count($errors)) {
+      $login_content = renderTemplate('./templates/login.php', [
+        'data' => $user,
+        'errors' => $errors,
+        'just_registered' => isset($_GET["just_registered"])
+      ]);
+      print($login_content);
+    }
   }
 }
 
@@ -145,7 +177,8 @@ $layout_content = renderTemplate('./templates/layout.php', [
   'project_id' => $project_id,
   'overlay' => $show_modal,
   'user' => $current_user,
-  'connection' => $connection
+  'connection' => $connection,
+  'register' => $register
 ]);
 print($layout_content);
 
