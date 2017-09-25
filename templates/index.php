@@ -10,30 +10,44 @@
   <div class="tasks-controls">
       <div class="radio-button-group">
           <label class="radio-button">
-              <input class="radio-button__input visually-hidden" type="radio" name="radio" checked="">
-              <span class="radio-button__text">Все задачи</span>
+              <input class="radio-button__input visually-hidden" type="radio" name="radio"
+                <?php if ($tasks_type === "all"): ?> checked <?php endif; ?>>
+              <a class="radio-button__text" href="/?show_tasks=all<?php if (isset($project_id)):?>&project=<?=$project_id?><?php endif;?>">
+                Все задачи
+              </a>
           </label>
 
           <label class="radio-button">
-              <input class="radio-button__input visually-hidden" type="radio" name="radio">
-              <span class="radio-button__text">Повестка дня</span>
+              <input class="radio-button__input visually-hidden" type="radio" name="radio"
+                <?php if ($tasks_type === "today"): ?> checked <?php endif; ?>>
+              <a class="radio-button__text" href="/?show_tasks=today<?php if (isset($project_id)):?>&project=<?=$project_id?><?php endif;?>">
+                Повестка дня
+              </a>
           </label>
 
           <label class="radio-button">
-              <input class="radio-button__input visually-hidden" type="radio" name="radio">
-              <span class="radio-button__text">Завтра</span>
+              <input class="radio-button__input visually-hidden" type="radio" name="radio"
+                <?php if ($tasks_type === "tomorrow"): ?> checked <?php endif; ?>>
+              <a class="radio-button__text" href="/?show_tasks=tomorrow<?php if (isset($project_id)):?>&project=<?=$project_id?><?php endif;?>">
+                Завтра
+              </a>
           </label>
 
           <label class="radio-button">
-              <input class="radio-button__input visually-hidden" type="radio" name="radio">
-              <span class="radio-button__text">Просроченные</span>
+              <input class="radio-button__input visually-hidden" type="radio" name="radio"
+              <?php if ($tasks_type === "overdue"): ?> checked <?php endif; ?>>
+              <a class="radio-button__text" href="/?show_tasks=overdue<?php if (isset($project_id)):?>&project=<?=$project_id?><?php endif;?>">
+                Просроченные
+              </a>
           </label>
       </div>
 
-      <label class="checkbox">
-          <input id="show-complete-tasks" class="checkbox__input visually-hidden" type="checkbox" <?php if ($show_complete_tasks) : ?> checked <?php endif; ?> >
-          <span class="checkbox__text">Показывать выполненные</span>
-      </label>
+      <?php if ($tasks_type !== "overdue"): ?>
+        <label class="checkbox">
+            <input id="show-complete-tasks" class="checkbox__input visually-hidden" type="checkbox" <?php if ($show_complete_tasks) : ?> checked <?php endif; ?> >
+            <span class="checkbox__text">Показывать выполненные</span>
+        </label>
+      <?php endif; ?>
   </div>
 
   <table class="tasks">

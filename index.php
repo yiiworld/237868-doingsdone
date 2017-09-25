@@ -20,7 +20,7 @@ $page_content = null;
 $current_user = null;
 
 // параметры запроса
-$project_id = isset($_GET['project']) ? (int) $_GET['project'] : 0;
+$project_id = isset($_GET['project']) ? (int) $_GET['project'] : null;
 $add = isset($_GET['add']);
 $login = isset($_GET['login']);
 $register = isset($_GET['register']) || isset($_POST['register']);
@@ -50,6 +50,7 @@ if (isset($_SESSION["user"])) {
   $default_project = isset($projects_list[0]) ? $projects_list[0] : null;
   $default_project_id = isset($default_project) ? $default_project["id"] : null;
 
+  // проверка существования запрошенной категории
   if ($project_id) {
     $is_project_exists = false;
     foreach ($projects_list as $project) {
@@ -101,11 +102,43 @@ if (isset($_SESSION["user"])) {
       }
     }
   }
-  $filtered_tasks = find_project_tasks($connection, $project_id, $current_user, $tasks_list);
+
+  // признак, какие задачи показывать:
+  // все (all), сегодняшние (today), завтрашние (tomorrow), просроченные (overdue)
+  $tasks_type = isset($_GET["show_tasks"]) ? $_GET["show_tasks"] : "all";
+
+  switch ($tasks_type) {
+    case "all":
+      $filtered_tasks = find_project_tasks($connection, $project_id, $current_user, $tasks_list);
+      break;
+    case "today":
+      $sql = "SELECT * FROM tasks WHERE complete_until = CURDATE()" .
+              (isset($project_id) ? " AND project_id = ?" : '') .
+              " AND user_id = ?";
+      $data = isset($project_id) ? [$project_id, $current_user["id"]] : [$current_user["id"]];
+      $filtered_tasks = selectData($connection, $sql, $data);
+      break;
+    case "tomorrow":
+      $sql = "SELECT * FROM tasks WHERE complete_until = DATE_ADD(CURDATE(), INTERVAL 1 DAY)" .
+              (isset($project_id) ? " AND project_id = ?" : '') .
+              " AND user_id = ?";
+      $data = isset($project_id) ? [$project_id, $current_user["id"]] : [$current_user["id"]];
+      $filtered_tasks = selectData($connection, $sql, $data);
+      break;
+    case "overdue":
+      $sql = "SELECT * FROM tasks WHERE complete_until < CURDATE()" .
+              (isset($project_id) ? " AND project_id = ?" : '') .
+              " AND user_id = ? AND completed_at IS NULL";
+      $data = isset($project_id) ? [$project_id, $current_user["id"]] : [$current_user["id"]];
+      $filtered_tasks = selectData($connection, $sql, $data);
+      break;
+  }
+
   $page_content = renderTemplate('./templates/index.php', [
     'tasks_list' => $filtered_tasks,
     'show_complete_tasks' => $show_complete_tasks,
-    'project_id' => $project_id
+    'project_id' => $project_id,
+    'tasks_type' => $tasks_type
   ]);
 
   // модальное окно добавления задачи
