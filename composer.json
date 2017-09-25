@@ -1,6 +1,6 @@
 {
-    "name": "doingsdone",
-    "description": "Личный проект «Дела в Порядке» от HTML Academy",
+    "name": "miolg/doingsdone",
+    "description": "Doingsdone project",
     "type": "project",
     "require": {}
 }
