@@ -46,7 +46,7 @@
                     <span class="checkbox__text"><?=htmlspecialchars($task["name"])?></span>
                 </label>
             </td>
-            <td class="task__date"><?=$task["complete_until"]?></td>
+            <td class="task__date"><?=date_format(date_create($task["complete_until"]), 'd.m.Y')?></td>
 
             <td class="task__controls">
               <button class="expand-control" type="button" name="button">Выполнить первое задание</button>

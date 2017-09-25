@@ -18,10 +18,11 @@
 
             <select class="form__input form__input--select  <?php if (isset($errors["project"])): ?> form__input--error <?php endif; ?>" name="project" id="project">
               <?php foreach($projects_list as $project):?>
-                   <?php if($project !== 'Все'): ?>
-                       <option value="<?=$data["project"]?>" <?php if ($project === $data["project"]): ?> selected <?php endif; ?>>
-                         <?=$project?>
+                   <?php if($project["name"] !== 'Все'): ?>
+                       <option value="<?=$project["id"]?>" <?php if ($project["id"] === $data["project_id"]): ?> selected <?php endif; ?>>
+                         <?=$project["name"]?>
                        </option>
+
                    <?php endif;?>
                <?php endforeach;?>
             </select>
@@ -32,7 +33,7 @@
 
         <div class="form__row">
             <label class="form__label" for="date">Дата выполнения <sup>*</sup></label>
-            <input class="form__input form__input--date <?php if (isset($errors["date"])): ?> form__input--error <?php endif; ?>" type="text" name="date" id="date" value="<?=$data["date"]?>" placeholder="Введите дату в формате ДД.ММ.ГГГГ">
+            <input class="form__input form__input--date <?php if (isset($errors["date"])): ?> form__input--error <?php endif; ?>" type="text" name="date" id="date" value="<?=$data["complete_until"]?>" placeholder="Введите дату в формате ДД.ММ.ГГГГ">
             <?php if (isset($errors["date"])): ?>
               <span class="form__message"><?=$errors["date"]?></span>
             <?php endif; ?>
@@ -42,7 +43,7 @@
             <label class="form__label" for="file">Файл</label>
 
             <div class="form__input-file">
-                <input class="visually-hidden" type="file" name="preview" id="preview" value="<?=$data["preview"]?>">
+                <input class="visually-hidden" type="file" name="preview" id="preview" value="<?=$data["file"]?>">
 
                 <label class="button button--transparent" for="preview">
                     <span>Выберите файл</span>

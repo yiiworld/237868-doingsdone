@@ -73,20 +73,32 @@ if (isset($_SESSION["user"])) {
   // данные для создания нового задания
   $new_task_data  = [
     "name" => (isset($_POST["name"]) ? htmlspecialchars($_POST["name"]) : ""),
-    "project" => (isset($_POST["project"]) ? htmlspecialchars($_POST["project"]) : $default_project),
-    "date" => (isset($_POST["date"]) ? $_POST["date"] : ""),
-    "preview" => (isset($_POST["preview"]) ? $_POST["preview"] : ""),
-    "completed" => false
+    "project_id" => (isset($_POST["project"]) ? intval($_POST["project"]) : $default_project["id"]),
+    "complete_until" => (isset($_POST["date"]) ? $_POST["date"] : ""),
+    "file" => (isset($_POST["preview"]) ? $_POST["preview"] : ""),
+    "user_id" => $current_user["id"]
   ];
 
   // сохранение новой задачи
-  if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST)) {
+  if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["add"])) {
+    var_dump($_POST["project"]);
+    var_dump($new_task_data);
     $errors = validateForm($required_task, $rules_task, $new_task_data);
     if (!count($errors)) {
-      if (isset($_FILES["preview"])) {
-         move_uploaded_file($_FILES["preview"]["tmp_name"],  __DIR__ . '/' . $_FILES["preview"]["name"]);
+      if (isset($_FILES["preview"]["name"])) {
+        $new_file_path = __DIR__ . '/' . $_FILES["preview"]["name"];
+        move_uploaded_file($_FILES["preview"]["tmp_name"], $new_file_path);
+        $new_task_data["file"] = $new_file_path;
       }
-      // array_unshift($tasks_list, $new_task_data);
+      $new_task_data["complete_until"] = date_format(date_create($new_task_data["complete_until"]), 'Y-m-d');
+      $insert_result = insertData($connection, "tasks", $new_task_data);
+      if ($insert_result) {
+        $tasks_list = selectData($connection,
+          "SELECT * FROM tasks WHERE user_id = ?",
+          [$current_user["id"]]);
+      } else {
+        $errors["name"] = "Ошибка сохранения. Повторите ещё раз.";
+      }
     }
   }
   $filtered_tasks = find_project_tasks($connection, $project_id, $current_user, $tasks_list);

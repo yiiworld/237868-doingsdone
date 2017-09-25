@@ -57,7 +57,10 @@
                     <ul class="main-navigation__list">
                       <?php foreach ($projects_list as $project) : ?>
                         <li class="main-navigation__list-item <?php if ($project["id"] == $project_id): ?> main-navigation__list-item--active <?php endif; ?>">
-                            <a href="?project=<?=$project["id"]?>" class="main-navigation__list-item-link" href="#"><?=htmlspecialchars($project["name"])?></a>
+                            <a href="<?php if ($project["name"] !== "Все"):?> ?project=<?=$project["id"]?> <?php else:?>/<?php endif;?>"
+                               class="main-navigation__list-item-link">
+                              <?=htmlspecialchars($project["name"])?>
+                            </a>
                             <span class="main-navigation__list-item-count">
                               <?php
                                 $id = $project["name"] !== "Все" ? $project["id"] : null;
