@@ -53,7 +53,9 @@
 
               <ul class="expand-list hidden">
                   <li class="expand-list__item">
-                      <a href="#">Выполнить</a>
+                      <a href="/?complete_task=<?=$task["id"]?><?php if (isset($project_id)):?>&project=<?=$project_id?><?php endif;?>">
+                        Выполнить
+                      </a>
                   </li>
 
                   <li class="expand-list__item">

@@ -34,7 +34,7 @@ function renderTemplate ($template_path, $template_data) {
 function find_project_tasks($connection, $project_id, $user, $tasks) {
   $result = [];
   if ($project_id) {
-    $sql = "SELECT name, complete_until, completed_at FROM tasks WHERE project_id = ?";
+    $sql = "SELECT id, name, complete_until, completed_at FROM tasks WHERE project_id = ?";
     $result = selectData($connection, $sql, [$project_id]);
   } else {
     $result = $tasks;

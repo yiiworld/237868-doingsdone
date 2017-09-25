@@ -81,8 +81,6 @@ if (isset($_SESSION["user"])) {
 
   // сохранение новой задачи
   if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["add"])) {
-    var_dump($_POST["project"]);
-    var_dump($new_task_data);
     $errors = validateForm($required_task, $rules_task, $new_task_data);
     if (!count($errors)) {
       if (isset($_FILES["preview"]["name"])) {
@@ -104,7 +102,8 @@ if (isset($_SESSION["user"])) {
   $filtered_tasks = find_project_tasks($connection, $project_id, $current_user, $tasks_list);
   $page_content = renderTemplate('./templates/index.php', [
     'tasks_list' => $filtered_tasks,
-    'show_complete_tasks' => $show_complete_tasks
+    'show_complete_tasks' => $show_complete_tasks,
+    'project_id' => $project_id
   ]);
 
   // модальное окно добавления задачи
@@ -117,6 +116,24 @@ if (isset($_SESSION["user"])) {
       ]);
     print($modal_content);
   }
+
+  // Отметка выполнения задачи
+  if (isset($_GET["complete_task"])) {
+      $task_id = intval($_GET["complete_task"]);
+      if ($task_id) {
+        $update_result = execQuery($connection,
+          "UPDATE tasks SET completed_at = ? WHERE id = ?",
+          [date('Y-m-d H:i:s', time()), $task_id]);
+        if ($update_result) {
+          $header_line = "Location: /index.php" . (isset($_GET['project']) ? '?project=' . $_GET['project'] : '');
+          header($header_line);
+        } else {
+          $error_content = renderTemplate('templates/error.php', ["error" => $error]);
+        	print($error_content);
+        	exit();
+        }
+      }
+   }
 } else {
   if ($register) {
     $user = [
