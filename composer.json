@@ -2,5 +2,7 @@
     "name": "miolg/doingsdone",
     "description": "Doingsdone project",
     "type": "project",
-    "require": {}
+    "require": {
+        "swiftmailer/swiftmailer": "^5.4"
+    }
 }
