@@ -6,7 +6,6 @@ header('Content-Type: text/html; charset=utf-8');
 
 session_start();
 require_once('functions.php');
-require_once('userdata.php');
 require_once('mysql_helper.php');
 require_once('init.php');
 require_once('vendor/autoload.php');
@@ -14,43 +13,23 @@ require_once('vendor/autoload.php');
 // устанавливаем часовой пояс в Московское время
 date_default_timezone_set('Europe/Moscow');
 
-$days = rand(-3, 3);
-$task_deadline_ts = strtotime("+" . $days . " day midnight"); // метка времени даты выполнения задачи
-$current_ts = strtotime('now midnight'); // текущая метка времени
-
-$date_deadline = date("d.m.Y", $task_deadline_ts);
-
-$days_until_deadline = floor(($task_deadline_ts -$current_ts ) / 86400);
-
-$projects_list = ["Все", "Входящие", "Учеба", "Работа", "Домашние дела", "Авто"];
-$tasks_list = [
-  ["name" => "Собеседование в IT компании", "date" => "01.06.2018", "project" => "Работа", "completed" => false ],
-  ["name" => "Выполнить тестовое задание", "date" => "25.05.2018", "project" => "Работа", "completed" => false ],
-  ["name" => "Сделать задание первого раздела", "date" => "21.04.2018", "project" => "Учеба", "completed" => true ],
-  ["name" => "Встреча с другом", "date" => "22.04.2018", "project" => "Входящие", "completed" => false ],
-  ["name" => "Купить корм для кота", "date" => null, "project" => "Домашние дела", "completed" => false ],
-  ["name" => "Заказать пиццу", "date" => null, "project" => "Домашние дела", "completed" => false ]
-];
+$projects_list = [];
+$tasks_list = [];
 $filtered_tasks = [];
-
 $page_content = null;
+$current_user = null;
 
 // параметры запроса
 $project_id = isset($_GET['project']) ? (int) $_GET['project'] : 0;
 $add = isset($_GET['add']);
 $login = isset($_GET['login']);
+$register = isset($_GET['register']) || isset($_POST['register']);
 
 $errors = [];
 $show_modal = false; // показывать ли модальное окно
 
-// данные для создания нового задания
-$new_task_data = [
-  "name" => "",
-  "project" => $projects_list[0],
-  "date" => "",
-  "preview" => ""
-];
-$required_task = ["name", "project", "date"];
+// проверки при создании задания
+$required_task = ["name", "project_id", "date"];
 $rules_task = ["date" => "validateDate"];
 
 // данные для аутентификации
@@ -66,36 +45,67 @@ if (isset($_GET['show_completed'])) {
 }
 
 if (isset($_SESSION["user"])) {
-  if (!array_key_exists($project_id, $projects_list)) {
+  $current_user = selectData($connection, "SELECT * FROM users WHERE email = ?", [$_SESSION["user"]["email"]])[0];
+  $projects_list = selectData($connection, "SELECT * FROM projects WHERE user_id = ?", [$current_user["id"]]);
+  $default_project = isset($projects_list[0]) ? $projects_list[0] : null;
+  $default_project_id = isset($default_project) ? $default_project["id"] : null;
+
+  if ($project_id) {
+    $is_project_exists = false;
+    foreach ($projects_list as $project) {
+      if (isset($project["id"]) && $project["id"] == $project_id) {
+        $is_project_exists = true;
+        break;
+      }
+    }
+  } else {
+    $is_project_exists = true;
+  }
+
+  if (!$is_project_exists) {
     http_response_code(404);
     exit;
   }
 
+  $tasks_list = selectData($connection, "SELECT * FROM tasks WHERE user_id = ?", [$current_user["id"]]);;
+  $filtered_tasks = [];
   // показывать или нет выполненные задачи
   $show_complete_tasks = isset($_COOKIE['showCompleteTasks']) ? (int) $_COOKIE['showCompleteTasks'] === 1 : false;
 
-  // сохранение новой задачи
-  if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST)) {
-    $new_task_data  = [
-      "name" => (isset($_POST["name"]) ? htmlspecialchars($_POST["name"]) : ""),
-      "project" => (isset($_POST["project"]) ? htmlspecialchars($_POST["project"]) : ""),
-      "date" => (isset($_POST["date"]) ? $_POST["date"] : ""),
-      "preview" => (isset($_POST["preview"]) ? $_POST["preview"] : ""),
-      "completed" => false
-    ];
+  // данные для создания нового задания
+  $new_task_data  = [
+    "name" => (isset($_POST["name"]) ? htmlspecialchars($_POST["name"]) : ""),
+    "project_id" => (isset($_POST["project"]) ? intval($_POST["project"]) : $default_project_id),
+    "complete_until" => (isset($_POST["date"]) ? $_POST["date"] : ""),
+    "file" => (isset($_POST["preview"]) ? $_POST["preview"] : ""),
+    "user_id" => $current_user["id"]
+  ];
 
+  // сохранение новой задачи
+  if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["add"])) {
     $errors = validateForm($required_task, $rules_task, $new_task_data);
     if (!count($errors)) {
-      if (isset($_FILES["preview"])) {
-         move_uploaded_file($_FILES["preview"]["tmp_name"],  __DIR__ . '/' . $_FILES["preview"]["name"]);
+      if (isset($_FILES["preview"]["name"])) {
+        $new_file_path = __DIR__ . '/' . $_FILES["preview"]["name"];
+        move_uploaded_file($_FILES["preview"]["tmp_name"], $new_file_path);
+        $new_task_data["file"] = $new_file_path;
       }
-      array_unshift($tasks_list, $new_task_data);
+      $new_task_data["complete_until"] = date_format(date_create($new_task_data["complete_until"]), 'Y-m-d');
+      $insert_result = insertData($connection, "tasks", $new_task_data);
+      if ($insert_result) {
+        $tasks_list = selectData($connection,
+          "SELECT * FROM tasks WHERE user_id = ?",
+          [$current_user["id"]]);
+      } else {
+        $errors["name"] = "Ошибка сохранения. Повторите ещё раз.";
+      }
     }
   }
-  $filtered_tasks = find_project_tasks($tasks_list, $projects_list[$project_id]);
+  $filtered_tasks = find_project_tasks($connection, $project_id, $current_user, $tasks_list);
   $page_content = renderTemplate('./templates/index.php', [
     'tasks_list' => $filtered_tasks,
-    'show_complete_tasks' => $show_complete_tasks
+    'show_complete_tasks' => $show_complete_tasks,
+    'project_id' => $project_id
   ]);
 
   // модальное окно добавления задачи
@@ -108,36 +118,86 @@ if (isset($_SESSION["user"])) {
       ]);
     print($modal_content);
   }
-} else {
-  $page_content = renderTemplate('./templates/guest.php', []);
 
- // аутентификация
-  if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST)) {
+  // Отметка выполнения задачи
+  if (isset($_GET["complete_task"])) {
+      $task_id = intval($_GET["complete_task"]);
+      if ($task_id) {
+        $update_result = execQuery($connection,
+          "UPDATE tasks SET completed_at = ? WHERE id = ?",
+          [date('Y-m-d H:i:s', time()), $task_id]);
+        if ($update_result) {
+          $header_line = "Location: /index.php" . (isset($_GET['project']) ? '?project=' . $_GET['project'] : '');
+          header($header_line);
+        } else {
+          $error_content = renderTemplate('templates/error.php', ["error" => $error]);
+        	print($error_content);
+        	exit();
+        }
+      }
+   }
+} else {
+  if ($register) {
     $user = [
-      "email" => isset($_POST["email"]) ? $_POST["email"] : "",
-      "password" => isset($_POST["password"]) ? $_POST["password"] : ""
+      "email" => isset($_POST["email"]) ? htmlspecialchars($_POST["email"]) : "",
+      "name" => isset($_POST["name"]) ?  htmlspecialchars($_POST["name"]) : ""
     ];
-    $errors = validateForm($required_user, $rules_user, $user);
-    if (!count($errors)) {
-      $tmp_user = searchUserByEmail($user["email"], $users);
-      if ($tmp_user && password_verify($user["password"], $tmp_user["password"])) {
-        $_SESSION["user"] = $tmp_user;
-        header("Location: /index.php");
-      } else {
-        $errors["email"] = "Вы ввели неверные данные";
-        $errors["password"] = "Вы ввели неверные данные";
+    $form_password = isset($_POST["form_password"]) ? htmlspecialchars($_POST["form_password"]) : "";
+    // регистрация нового пользователя
+    if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["register"])) {
+      $required_user = ["email", "password", "name"];
+      $errors = validateForm($required_user, $rules_user, $user);
+      if (!count($errors)) {
+        if (!searchUserByEmail($connection, $user["email"])) {
+          $user["password"] = password_hash($form_password, PASSWORD_DEFAULT);
+          $insert_result = insertData($connection, "users", $user);
+          if ($insert_result) {
+            header("Location: /index.php?login&just_registered");
+          } else {
+            $errors["email"] = "Ошибка сохранения. Повторите регистрацию ещё раз.";
+          }
+        } else {
+          $errors["email"] = "Пользователь с таким email уже существует.";
+        }
       }
     }
-  }
 
-  // модальное окно логина
-  $show_modal = $login || count($errors);
-  if ($show_modal) {
-    $login_content = renderTemplate('./templates/login.php', [
+    $page_content = renderTemplate('./templates/register.php', [
       'data' => $user,
+      'form_password' => $form_password,
       'errors' => $errors
     ]);
-    print($login_content);
+  } else {
+    $page_content = renderTemplate('./templates/guest.php', []);
+
+   // аутентификация
+    if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["login"])) {
+      $user = [
+        "email" => isset($_POST["email"]) ? htmlspecialchars($_POST["email"]) : "",
+        "password" => isset($_POST["password"]) ? htmlspecialchars($_POST["password"]) : ""
+      ];
+      $errors = validateForm($required_user, $rules_user, $user);
+      if (!count($errors)) {
+        $tmp_user = searchUserByEmail($connection, $user["email"])[0];
+        if ($tmp_user && password_verify($user["password"], $tmp_user["password"])) {
+          $_SESSION["user"] = $tmp_user;
+          header("Location: /index.php");
+        } else {
+          $errors["email"] = "Вы ввели неверные данные";
+          $errors["password"] = "Вы ввели неверные данные";
+        }
+      }
+    }
+
+    // модальное окно логина
+    if ($login || count($errors)) {
+      $login_content = renderTemplate('./templates/login.php', [
+        'data' => $user,
+        'errors' => $errors,
+        'just_registered' => isset($_GET["just_registered"])
+      ]);
+      print($login_content);
+    }
   }
 }
 
@@ -148,7 +208,9 @@ $layout_content = renderTemplate('./templates/layout.php', [
   'tasks_list' => $tasks_list,
   'project_id' => $project_id,
   'overlay' => $show_modal,
-  'user' => isset($_SESSION["user"]) ? $_SESSION["user"] : null
+  'user' => $current_user,
+  'connection' => $connection,
+  'register' => $register
 ]);
 print($layout_content);
 
