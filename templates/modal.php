@@ -16,7 +16,7 @@
         <div class="form__row">
             <label class="form__label" for="project">Проект <sup>*</sup></label>
 
-            <select class="form__input form__input--select  <?php if (isset($errors["project"])): ?> form__input--error <?php endif; ?>" name="project" id="project">
+            <select class="form__input form__input--select  <?php if (isset($errors["project_id"])): ?> form__input--error <?php endif; ?>" name="project" id="project">
               <?php foreach($projects_list as $project):?>
                    <?php if($project["name"] !== 'Все'): ?>
                        <option value="<?=$project["id"]?>" <?php if ($project["id"] === $data["project_id"]): ?> selected <?php endif; ?>>
@@ -26,8 +26,8 @@
                    <?php endif;?>
                <?php endforeach;?>
             </select>
-            <?php if (isset($errors["project"])): ?>
-              <span class="form__message"><?=$errors["project"]?></span>
+            <?php if (isset($errors["project_id"])): ?>
+              <span class="form__message"><?=$errors["project_id"]?></span>
             <?php endif; ?>
         </div>
 

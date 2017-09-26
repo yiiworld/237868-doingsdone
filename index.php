@@ -28,7 +28,7 @@ $errors = [];
 $show_modal = false; // показывать ли модальное окно
 
 // проверки при создании задания
-$required_task = ["name", "project", "date"];
+$required_task = ["name", "project_id", "date"];
 $rules_task = ["date" => "validateDate"];
 
 // данные для аутентификации
@@ -46,7 +46,8 @@ if (isset($_GET['show_completed'])) {
 if (isset($_SESSION["user"])) {
   $current_user = selectData($connection, "SELECT * FROM users WHERE email = ?", [$_SESSION["user"]["email"]])[0];
   $projects_list = selectData($connection, "SELECT * FROM projects WHERE user_id = ?", [$current_user["id"]]);
-  $default_project = isset($projects_list[0]) ? $projects_list[0] : '';
+  $default_project = isset($projects_list[0]) ? $projects_list[0] : null;
+  $default_project_id = isset($default_project) ? $default_project["id"] : null;
 
   if ($project_id) {
     $is_project_exists = false;
@@ -73,7 +74,7 @@ if (isset($_SESSION["user"])) {
   // данные для создания нового задания
   $new_task_data  = [
     "name" => (isset($_POST["name"]) ? htmlspecialchars($_POST["name"]) : ""),
-    "project_id" => (isset($_POST["project"]) ? intval($_POST["project"]) : $default_project["id"]),
+    "project_id" => (isset($_POST["project"]) ? intval($_POST["project"]) : $default_project_id),
     "complete_until" => (isset($_POST["date"]) ? $_POST["date"] : ""),
     "file" => (isset($_POST["preview"]) ? $_POST["preview"] : ""),
     "user_id" => $current_user["id"]
@@ -138,17 +139,16 @@ if (isset($_SESSION["user"])) {
   if ($register) {
     $user = [
       "email" => isset($_POST["email"]) ? htmlspecialchars($_POST["email"]) : "",
-      "form_password" => isset($_POST["form_password"]) ? htmlspecialchars($_POST["form_password"]) : "",
       "name" => isset($_POST["name"]) ?  htmlspecialchars($_POST["name"]) : ""
     ];
+    $form_password = isset($_POST["form_password"]) ? htmlspecialchars($_POST["form_password"]) : "";
     // регистрация нового пользователя
     if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["register"])) {
       $required_user = ["email", "password", "name"];
       $errors = validateForm($required_user, $rules_user, $user);
       if (!count($errors)) {
         if (!searchUserByEmail($connection, $user["email"])) {
-          $user["password"] = password_hash($user["form_password"], PASSWORD_DEFAULT);
-          unset($user["form_password"]);
+          $user["password"] = password_hash($form_password, PASSWORD_DEFAULT);
           $insert_result = insertData($connection, "users", $user);
           if ($insert_result) {
             header("Location: /index.php?login&just_registered");
@@ -163,6 +163,7 @@ if (isset($_SESSION["user"])) {
 
     $page_content = renderTemplate('./templates/register.php', [
       'data' => $user,
+      'form_password' => $form_password,
       'errors' => $errors
     ]);
   } else {
