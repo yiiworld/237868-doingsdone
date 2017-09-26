@@ -185,6 +185,14 @@ if (isset($_SESSION["user"])) {
           $user["password"] = password_hash($form_password, PASSWORD_DEFAULT);
           $insert_result = insertData($connection, "users", $user);
           if ($insert_result) {
+            execQuery($connection,
+              "INSERT INTO projects (name, user_id) VALUES " .
+              "('Входящие', ?), " .
+              "('Учеба', ?), " .
+              "('Работа', ?), " .
+              "('Домашние дела', ?), " .
+              "('Авто', ?)",
+              [$insert_result, $insert_result, $insert_result, $insert_result, $insert_result]);
             header("Location: /index.php?login&just_registered");
           } else {
             $errors["email"] = "Ошибка сохранения. Повторите регистрацию ещё раз.";
