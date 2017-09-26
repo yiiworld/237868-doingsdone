@@ -141,6 +141,7 @@ if (isset($_SESSION["user"])) {
       "form_password" => isset($_POST["form_password"]) ? htmlspecialchars($_POST["form_password"]) : "",
       "name" => isset($_POST["name"]) ?  htmlspecialchars($_POST["name"]) : ""
     ];
+    // регистрация нового пользователя
     if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["register"])) {
       $required_user = ["email", "password", "name"];
       $errors = validateForm($required_user, $rules_user, $user);

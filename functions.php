@@ -116,10 +116,10 @@ function validateForm($required, $rules, $data) {
 * @param resource $connection Ресурс соединения
 * @param string $email Email пользователя
 *
-* @return array $result Найденный пользователь
+* @return array Найденный пользователь
 */
 function searchUserByEmail($connection, $email) {
-  return $user = selectData($connection,
+  return selectData($connection,
     "SELECT * FROM users WHERE email = ?",
     [$email]);
 }
