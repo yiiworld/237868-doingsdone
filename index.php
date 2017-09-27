@@ -20,7 +20,7 @@ $page_content = null;
 $current_user = null;
 
 // параметры запроса
-$project_id = isset($_GET['project']) ? (int) $_GET['project'] : null;
+$project_id = isset($_GET['project']) ? intval($_GET['project']) : null;
 $add = isset($_GET['add']);
 $login = isset($_GET['login']);
 $register = isset($_GET['register']) || isset($_POST['register']);
@@ -69,7 +69,6 @@ if (isset($_SESSION["user"])) {
   }
 
   $tasks_list = selectData($connection, "SELECT * FROM tasks WHERE user_id = ?", [$current_user["id"]]);;
-  $filtered_tasks = [];
   // показывать или нет выполненные задачи
   $show_complete_tasks = isset($_COOKIE['showCompleteTasks']) ? (int) $_COOKIE['showCompleteTasks'] === 1 : false;
 
@@ -106,32 +105,25 @@ if (isset($_SESSION["user"])) {
   // признак, какие задачи показывать:
   // все (all), сегодняшние (today), завтрашние (tomorrow), просроченные (overdue)
   $tasks_type = isset($_GET["show_tasks"]) ? $_GET["show_tasks"] : "all";
+  $tasks_type_sql = "SELECT * FROM tasks WHERE user_id = ? " .
+          (isset($project_id) ? " AND project_id = ?" : '');
+  $tasks_type_data = isset($project_id) ? [$current_user["id"], $project_id] : [$current_user["id"]];
 
   switch ($tasks_type) {
-    case "all":
-      $filtered_tasks = find_project_tasks($connection, $project_id, $current_user, $tasks_list);
-      break;
     case "today":
-      $sql = "SELECT * FROM tasks WHERE complete_until = CURDATE()" .
-              (isset($project_id) ? " AND project_id = ?" : '') .
-              " AND user_id = ?";
-      $data = isset($project_id) ? [$project_id, $current_user["id"]] : [$current_user["id"]];
-      $filtered_tasks = selectData($connection, $sql, $data);
+      $tasks_type_sql .= " AND DATE_FORMAT(complete_until, '%Y-%m-%d') = CURDATE()";
+      $filtered_tasks = selectData($connection, $tasks_type_sql, $tasks_type_data);
       break;
     case "tomorrow":
-      $sql = "SELECT * FROM tasks WHERE complete_until = DATE_ADD(CURDATE(), INTERVAL 1 DAY)" .
-              (isset($project_id) ? " AND project_id = ?" : '') .
-              " AND user_id = ?";
-      $data = isset($project_id) ? [$project_id, $current_user["id"]] : [$current_user["id"]];
-      $filtered_tasks = selectData($connection, $sql, $data);
+      $tasks_type_sql .= " AND DATE_FORMAT(complete_until, '%Y-%m-%d') = DATE_ADD(CURDATE(), INTERVAL 1 DAY)";
+      $filtered_tasks = selectData($connection, $tasks_type_sql, $tasks_type_data);
       break;
     case "overdue":
-      $sql = "SELECT * FROM tasks WHERE complete_until < CURDATE()" .
-              (isset($project_id) ? " AND project_id = ?" : '') .
-              " AND user_id = ? AND completed_at IS NULL";
-      $data = isset($project_id) ? [$project_id, $current_user["id"]] : [$current_user["id"]];
-      $filtered_tasks = selectData($connection, $sql, $data);
+      $tasks_type_sql .= " AND DATE_FORMAT(complete_until, '%Y-%m-%d') < CURDATE() AND completed_at IS NULL";
+      $filtered_tasks = selectData($connection, $tasks_type_sql, $tasks_type_data);
       break;
+    default:
+      $filtered_tasks = find_project_tasks($connection, $project_id, $current_user, $tasks_list);
   }
 
   $page_content = renderTemplate('./templates/index.php', [
@@ -154,20 +146,20 @@ if (isset($_SESSION["user"])) {
 
   // Отметка выполнения задачи
   if (isset($_GET["complete_task"])) {
-      $task_id = intval($_GET["complete_task"]);
-      if ($task_id) {
-        $update_result = execQuery($connection,
-          "UPDATE tasks SET completed_at = ? WHERE id = ?",
-          [date('Y-m-d H:i:s', time()), $task_id]);
-        if ($update_result) {
-          $header_line = "Location: /index.php" . (isset($_GET['project']) ? '?project=' . $_GET['project'] : '');
-          header($header_line);
-        } else {
-          $error_content = renderTemplate('templates/error.php', ["error" => $error]);
-        	print($error_content);
-        	exit();
-        }
+    $task_id = intval($_GET["complete_task"]);
+    if ($task_id) {
+      $update_result = execQuery($connection,
+        "UPDATE tasks SET completed_at = ? WHERE id = ?",
+        [date('Y-m-d H:i:s', time()), $task_id]);
+      if ($update_result) {
+        $header_line = "Location: /index.php" . (isset($_GET['project']) ? '?project=' . $_GET['project'] : '');
+        header($header_line);
+      } else {
+        $error_content = renderTemplate('templates/error.php', ["error" => $error]);
+      	print($error_content);
+      	exit();
       }
+    }
    }
 } else {
   if ($register) {
