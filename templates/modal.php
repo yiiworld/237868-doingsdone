@@ -18,12 +18,9 @@
 
             <select class="form__input form__input--select  <?php if (isset($errors["project_id"])): ?> form__input--error <?php endif; ?>" name="project" id="project">
               <?php foreach($projects_list as $project):?>
-                   <?php if($project["name"] !== 'Все'): ?>
-                       <option value="<?=$project["id"]?>" <?php if ($project["id"] === $data["project_id"]): ?> selected <?php endif; ?>>
-                         <?=$project["name"]?>
-                       </option>
-
-                   <?php endif;?>
+                 <option value="<?=$project["id"]?>" <?php if ($project["id"] === $data["project_id"]): ?> selected <?php endif; ?>>
+                   <?=$project["name"]?>
+                 </option>
                <?php endforeach;?>
             </select>
             <?php if (isset($errors["project_id"])): ?>

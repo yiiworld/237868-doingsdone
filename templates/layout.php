@@ -16,7 +16,7 @@
     <div class="container <?php if (isset($user) || $register): ?> container--with-sidebar <?php endif; ?>">
         <header class="main-header">
           <?php if (isset($user)): ?>
-            <a href="#">
+            <a href="/">
                 <img src="img/logo.png" width="153" height="42" alt="Логитип Дела в порядке">
             </a>
 
