@@ -60,7 +60,7 @@
                             Все
                           </a>
                           <span class="main-navigation__list-item-count">
-                            <?php print(calc_number_of_tasks($connection, null, $user, $tasks_list)) ?>
+                            <?php print(calc_number_of_tasks($connection, null, $user, $tasks_list, $show_complete_tasks)) ?>
                           </span>
                       </li>
                       <?php foreach ($projects_list as $project) : ?>
@@ -70,7 +70,7 @@
                               <?=htmlspecialchars($project["name"])?>
                             </a>
                             <span class="main-navigation__list-item-count">
-                              <?php print(calc_number_of_tasks($connection, $project["id"], $user, $tasks_list)) ?>
+                              <?php print(calc_number_of_tasks($connection, $project["id"], $user, $tasks_list, $show_complete_tasks)) ?>
                             </span>
                         </li>
                       <?php endforeach; ?>

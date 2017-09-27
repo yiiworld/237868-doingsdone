@@ -29,8 +29,8 @@ $errors = [];
 $show_modal = false; // показывать ли модальное окно
 
 // проверки при создании задания
-$required_task = ["name", "project_id", "date"];
-$rules_task = ["date" => "validateDate"];
+$required_task = ["name", "project_id"];
+$rules_task = ["complete_until" => "validateDate"];
 
 // данные для аутентификации
 $user = [ "email" => "", "password" => ""];
@@ -90,7 +90,11 @@ if (isset($_SESSION["user"])) {
         move_uploaded_file($_FILES["preview"]["tmp_name"], $new_file_path);
         $new_task_data["file"] = $new_file_path;
       }
-      $new_task_data["complete_until"] = date_format(date_create($new_task_data["complete_until"]), 'Y-m-d');
+      if ($new_task_data["complete_until"] !== "") {
+        $new_task_data["complete_until"] = date_format(date_create($new_task_data["complete_until"]), 'Y-m-d H:i:s');
+      } else {
+        unset($new_task_data["complete_until"]);
+      }
       $insert_result = insertData($connection, "tasks", $new_task_data);
       if ($insert_result) {
         $tasks_list = selectData($connection,
@@ -106,7 +110,7 @@ if (isset($_SESSION["user"])) {
   // все (all), сегодняшние (today), завтрашние (tomorrow), просроченные (overdue)
   $tasks_type = isset($_GET["show_tasks"]) ? $_GET["show_tasks"] : "all";
   $tasks_type_sql = "SELECT * FROM tasks WHERE user_id = ? " .
-          (isset($project_id) ? " AND project_id = ?" : '');
+          (isset($project_id) ? " AND project_id = ?" : "");
   $tasks_type_data = isset($project_id) ? [$current_user["id"], $project_id] : [$current_user["id"]];
 
   switch ($tasks_type) {
@@ -123,7 +127,7 @@ if (isset($_SESSION["user"])) {
       $filtered_tasks = selectData($connection, $tasks_type_sql, $tasks_type_data);
       break;
     default:
-      $filtered_tasks = find_project_tasks($connection, $project_id, $current_user, $tasks_list);
+      $filtered_tasks = find_project_tasks($connection, $project_id, $current_user, $tasks_list, $show_complete_tasks);
   }
 
   $page_content = renderTemplate('./templates/index.php', [
@@ -155,7 +159,9 @@ if (isset($_SESSION["user"])) {
         $header_line = "Location: /index.php" . (isset($_GET['project']) ? '?project=' . $_GET['project'] : '');
         header($header_line);
       } else {
-        $error_content = renderTemplate('templates/error.php', ["error" => $error]);
+        $error_content = renderTemplate('templates/error.php', [
+          "error" => "Ошибка обновления статуса задачи"
+        ]);
       	print($error_content);
       	exit();
       }
@@ -247,6 +253,7 @@ $layout_content = renderTemplate('./templates/layout.php', [
   'page_title' => 'Дела в порядке!',
   'projects_list' => $projects_list,
   'tasks_list' => $tasks_list,
+  'show_complete_tasks' => $show_complete_tasks,
   'project_id' => $project_id,
   'overlay' => $show_modal,
   'user' => $current_user,

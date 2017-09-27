@@ -31,10 +31,11 @@ function renderTemplate ($template_path, $template_data) {
 *
 * @return array $result Результат запроса данных
 */
-function find_project_tasks($connection, $project_id, $user, $tasks) {
+function find_project_tasks($connection, $project_id, $user, $tasks, $show_complete_tasks) {
   $result = [];
   if ($project_id) {
-    $sql = "SELECT id, name, complete_until, completed_at FROM tasks WHERE project_id = ?";
+    $sql = "SELECT id, name, complete_until, completed_at FROM tasks WHERE project_id = ?" .
+      (!$show_complete_tasks ? " AND completed_at IS NULL" : "");
     $result = selectData($connection, $sql, [$project_id]);
   } else {
     $result = $tasks;
@@ -52,8 +53,8 @@ function find_project_tasks($connection, $project_id, $user, $tasks) {
 *
 * @return integer Количество задач в категории
 */
-function calc_number_of_tasks($connection, $project_id, $user, $tasks) {
-  return count(find_project_tasks($connection, $project_id, $user, $tasks));
+function calc_number_of_tasks($connection, $project_id, $user, $tasks, $show_complete_tasks) {
+  return count(find_project_tasks($connection, $project_id, $user, $tasks, $show_complete_tasks));
 }
 
 /**
@@ -64,12 +65,20 @@ function calc_number_of_tasks($connection, $project_id, $user, $tasks) {
 * @return string Текст возникшей ошибки
 */
 function validateDate($value) {
+  $error = null;
   if ($value)  {
-    $tmp = explode(".", $value);
+    $date = explode(" ", $value);
+    $tmp = explode(".", $date[0]);
     if (!checkdate($tmp[1], $tmp[0], $tmp[2])) {
-      return "Введите дату в формате ДД.ММ.ГГГГ";
+      $error = "Введите дату в формате ДД.ММ.ГГГГ";
+    } else {
+      $tmp = strtotime($value);
+      if ($tmp < time()) {
+        $error = "Нельзя указывать прошедшую дату";
+      }
     }
   }
+  return $error;
 }
 
 /**
