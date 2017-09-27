@@ -163,6 +163,7 @@ if (isset($_SESSION["user"])) {
    }
 } else {
   if ($register) {
+    $default_projects_list = ["Входящие", "Учеба", "Работа", "Домашние дела", "Авто"];
     $user = [
       "email" => isset($_POST["email"]) ? htmlspecialchars($_POST["email"]) : "",
       "name" => isset($_POST["name"]) ?  htmlspecialchars($_POST["name"]) : ""
@@ -177,14 +178,21 @@ if (isset($_SESSION["user"])) {
           $user["password"] = password_hash($form_password, PASSWORD_DEFAULT);
           $insert_result = insertData($connection, "users", $user);
           if ($insert_result) {
-            execQuery($connection,
-              "INSERT INTO projects (name, user_id) VALUES " .
-              "('Входящие', ?), " .
-              "('Учеба', ?), " .
-              "('Работа', ?), " .
-              "('Домашние дела', ?), " .
-              "('Авто', ?)",
-              [$insert_result, $insert_result, $insert_result, $insert_result, $insert_result]);
+            if (count($default_projects_list) !== 0) {
+              $new_user_projects_for_sql = '';
+              $new_user_projects_data = [];
+              foreach ($default_projects_list as $index => $project) {
+                if ($index !== 0) {
+                  $new_user_projects_for_sql .= ",";
+                }
+                $new_user_projects_for_sql .= "('" . $project . "', ?". ")";
+                $new_user_projects_data[] = $insert_result;
+              }
+              execQuery($connection,
+                "INSERT INTO projects (name, user_id) VALUES " .
+                $new_user_projects_for_sql,
+                $new_user_projects_data);
+            }
             header("Location: /index.php?login&just_registered");
           } else {
             $errors["email"] = "Ошибка сохранения. Повторите регистрацию ещё раз.";
