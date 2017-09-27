@@ -2,5 +2,8 @@
     "name": "miolg/doingsdone",
     "description": "Doingsdone project",
     "type": "project",
-    "require": {}
+    "require": {
+        "swiftmailer/swiftmailer": "^5.4",
+        "jakezatecky/array_group_by": "^1.0"
+    }
 }
