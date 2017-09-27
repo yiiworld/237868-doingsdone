@@ -4,19 +4,14 @@ require_once('functions.php');
 require_once('init.php');
 
 
-$sql = "SELECT DISTINCT u.id, u.name, u.email FROM tasks AS t " .
+$sql = "SELECT u.id, u.name AS username, u.email, t.name, DATE_FORMAT(t.complete_until, '%d-%m-%Y %h:%i') AS deadline FROM tasks AS t " .
       "JOIN users AS u ON t.user_id = u.id " .
       "WHERE t.complete_until BETWEEN CURRENT_TIMESTAMP() AND DATE_ADD(CURRENT_TIMESTAMP(), INTERVAL 1 HOUR) " .
       "AND completed_at IS NULL";
-$users = selectData($connection, $sql, []);
+$all_users_tasks = selectData($connection, $sql, []);
+$users = array_group_by($all_users_tasks, 'email');
 
-foreach ($users as $user) {
-  $sql = "SELECT t.name, DATE_FORMAT(t.complete_until, '%d-%m-%Y %h:%i') AS deadline FROM tasks AS t " .
-        "JOIN users AS u ON t.user_id = u.id AND u.id = ? " .
-        "WHERE t.complete_until BETWEEN CURRENT_TIMESTAMP() AND DATE_ADD(CURRENT_TIMESTAMP(), INTERVAL 1 HOUR) " .
-        "AND completed_at IS NULL";
-  $user_tasks = selectData($connection, $sql, [$user["id"]]);
-
+foreach ($users as $email => $user_tasks) {
   $tasks_string = '';
   foreach ($user_tasks as $ind => $task) {
     if ($ind !== 0) {
@@ -32,9 +27,9 @@ foreach ($users as $user) {
   // Формирование сообщения
   $message = new Swift_Message();
   $message->setContentType("text/plain");
-  $message->setTo([$user["email"] => $user["name"]]);
+  $message->setTo([$email => $user_tasks[0]["username"]]);
   $message->setSubject("Уведомление от сервиса «Дела в порядке»");
-  $message->setBody("Уважаемый " . $user["name"] . ". У вас" .
+  $message->setBody("Уважаемый " . $user_tasks[0]["username"] . ". У вас" .
                     (count($user_tasks) === 1 ?
                     " запланирована задача " :
                     " запланированы задачи ") . $tasks_string );

@@ -3,6 +3,7 @@
     "description": "Doingsdone project",
     "type": "project",
     "require": {
-        "swiftmailer/swiftmailer": "^5.4"
+        "swiftmailer/swiftmailer": "^5.4",
+        "jakezatecky/array_group_by": "^1.0"
     }
 }
