@@ -36,7 +36,7 @@
                 </div>
             </div>
           <?php else: ?>
-            <a href="#">
+            <a href="/">
               <img src="../img/logo.png" width="153" height="42" alt="Логитип Дела в порядке">
             </a>
             <?php if (!$register): ?>
@@ -55,17 +55,22 @@
 
                 <nav class="main-navigation">
                     <ul class="main-navigation__list">
+                      <li class="main-navigation__list-item <?php if (!isset($project_id)): ?> main-navigation__list-item--active <?php endif; ?>">
+                          <a href="/" class="main-navigation__list-item-link">
+                            Все
+                          </a>
+                          <span class="main-navigation__list-item-count">
+                            <?php print(calc_number_of_tasks($connection, null, $user, $tasks_list)) ?>
+                          </span>
+                      </li>
                       <?php foreach ($projects_list as $project) : ?>
                         <li class="main-navigation__list-item <?php if ($project["id"] == $project_id): ?> main-navigation__list-item--active <?php endif; ?>">
-                            <a href="<?php if ($project["name"] !== "Все"):?> ?project=<?=$project["id"]?> <?php else:?>/<?php endif;?>"
+                            <a href="?project=<?=$project["id"]?>"
                                class="main-navigation__list-item-link">
                               <?=htmlspecialchars($project["name"])?>
                             </a>
                             <span class="main-navigation__list-item-count">
-                              <?php
-                                $id = $project["name"] !== "Все" ? $project["id"] : null;
-                                print(calc_number_of_tasks($connection, $id, $user, $tasks_list))
-                              ?>
+                              <?php print(calc_number_of_tasks($connection, $project["id"], $user, $tasks_list)) ?>
                             </span>
                         </li>
                       <?php endforeach; ?>

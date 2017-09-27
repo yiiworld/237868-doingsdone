@@ -20,7 +20,7 @@ $page_content = null;
 $current_user = null;
 
 // параметры запроса
-$project_id = isset($_GET['project']) ? (int) $_GET['project'] : 0;
+$project_id = isset($_GET['project']) ? intval($_GET['project']) : null;
 $add = isset($_GET['add']);
 $login = isset($_GET['login']);
 $register = isset($_GET['register']) || isset($_POST['register']);
@@ -50,6 +50,7 @@ if (isset($_SESSION["user"])) {
   $default_project = isset($projects_list[0]) ? $projects_list[0] : null;
   $default_project_id = isset($default_project) ? $default_project["id"] : null;
 
+  // проверка существования запрошенной категории
   if ($project_id) {
     $is_project_exists = false;
     foreach ($projects_list as $project) {
@@ -68,7 +69,6 @@ if (isset($_SESSION["user"])) {
   }
 
   $tasks_list = selectData($connection, "SELECT * FROM tasks WHERE user_id = ?", [$current_user["id"]]);;
-  $filtered_tasks = [];
   // показывать или нет выполненные задачи
   $show_complete_tasks = isset($_COOKIE['showCompleteTasks']) ? (int) $_COOKIE['showCompleteTasks'] === 1 : false;
 
@@ -101,11 +101,36 @@ if (isset($_SESSION["user"])) {
       }
     }
   }
-  $filtered_tasks = find_project_tasks($connection, $project_id, $current_user, $tasks_list);
+
+  // признак, какие задачи показывать:
+  // все (all), сегодняшние (today), завтрашние (tomorrow), просроченные (overdue)
+  $tasks_type = isset($_GET["show_tasks"]) ? $_GET["show_tasks"] : "all";
+  $tasks_type_sql = "SELECT * FROM tasks WHERE user_id = ? " .
+          (isset($project_id) ? " AND project_id = ?" : '');
+  $tasks_type_data = isset($project_id) ? [$current_user["id"], $project_id] : [$current_user["id"]];
+
+  switch ($tasks_type) {
+    case "today":
+      $tasks_type_sql .= " AND DATE_FORMAT(complete_until, '%Y-%m-%d') = CURDATE()";
+      $filtered_tasks = selectData($connection, $tasks_type_sql, $tasks_type_data);
+      break;
+    case "tomorrow":
+      $tasks_type_sql .= " AND DATE_FORMAT(complete_until, '%Y-%m-%d') = DATE_ADD(CURDATE(), INTERVAL 1 DAY)";
+      $filtered_tasks = selectData($connection, $tasks_type_sql, $tasks_type_data);
+      break;
+    case "overdue":
+      $tasks_type_sql .= " AND DATE_FORMAT(complete_until, '%Y-%m-%d') < CURDATE() AND completed_at IS NULL";
+      $filtered_tasks = selectData($connection, $tasks_type_sql, $tasks_type_data);
+      break;
+    default:
+      $filtered_tasks = find_project_tasks($connection, $project_id, $current_user, $tasks_list);
+  }
+
   $page_content = renderTemplate('./templates/index.php', [
     'tasks_list' => $filtered_tasks,
     'show_complete_tasks' => $show_complete_tasks,
-    'project_id' => $project_id
+    'project_id' => $project_id,
+    'tasks_type' => $tasks_type
   ]);
 
   // модальное окно добавления задачи
@@ -121,23 +146,24 @@ if (isset($_SESSION["user"])) {
 
   // Отметка выполнения задачи
   if (isset($_GET["complete_task"])) {
-      $task_id = intval($_GET["complete_task"]);
-      if ($task_id) {
-        $update_result = execQuery($connection,
-          "UPDATE tasks SET completed_at = ? WHERE id = ?",
-          [date('Y-m-d H:i:s', time()), $task_id]);
-        if ($update_result) {
-          $header_line = "Location: /index.php" . (isset($_GET['project']) ? '?project=' . $_GET['project'] : '');
-          header($header_line);
-        } else {
-          $error_content = renderTemplate('templates/error.php', ["error" => $error]);
-        	print($error_content);
-        	exit();
-        }
+    $task_id = intval($_GET["complete_task"]);
+    if ($task_id) {
+      $update_result = execQuery($connection,
+        "UPDATE tasks SET completed_at = ? WHERE id = ?",
+        [date('Y-m-d H:i:s', time()), $task_id]);
+      if ($update_result) {
+        $header_line = "Location: /index.php" . (isset($_GET['project']) ? '?project=' . $_GET['project'] : '');
+        header($header_line);
+      } else {
+        $error_content = renderTemplate('templates/error.php', ["error" => $error]);
+      	print($error_content);
+      	exit();
       }
+    }
    }
 } else {
   if ($register) {
+    $default_projects_list = ["Входящие", "Учеба", "Работа", "Домашние дела", "Авто"];
     $user = [
       "email" => isset($_POST["email"]) ? htmlspecialchars($_POST["email"]) : "",
       "name" => isset($_POST["name"]) ?  htmlspecialchars($_POST["name"]) : ""
@@ -152,6 +178,21 @@ if (isset($_SESSION["user"])) {
           $user["password"] = password_hash($form_password, PASSWORD_DEFAULT);
           $insert_result = insertData($connection, "users", $user);
           if ($insert_result) {
+            if (count($default_projects_list) !== 0) {
+              $new_user_projects_for_sql = '';
+              $new_user_projects_data = [];
+              foreach ($default_projects_list as $index => $project) {
+                if ($index !== 0) {
+                  $new_user_projects_for_sql .= ",";
+                }
+                $new_user_projects_for_sql .= "('" . $project . "', ?". ")";
+                $new_user_projects_data[] = $insert_result;
+              }
+              execQuery($connection,
+                "INSERT INTO projects (name, user_id) VALUES " .
+                $new_user_projects_for_sql,
+                $new_user_projects_data);
+            }
             header("Location: /index.php?login&just_registered");
           } else {
             $errors["email"] = "Ошибка сохранения. Повторите регистрацию ещё раз.";

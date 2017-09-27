@@ -4,9 +4,6 @@ INSERT INTO users (email, password, name) VALUES
   ('warrior07@mail.ru', '$2y$10$2OxpEH7narYpkOT1H5cApezuzh10tZEEQ2axgFOaKW.55LxIJBgWW', 'Руслан');
 
 INSERT INTO projects (name, user_id) VALUES
-  ("Все", 1),
-  ("Все", 2),
-  ("Все", 3),
   ("Входящие", 1),
   ("Входящие", 2),
   ("Входящие", 3),
