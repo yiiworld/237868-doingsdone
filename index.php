@@ -21,7 +21,8 @@ $current_user = null;
 
 // параметры запроса
 $project_id = isset($_GET['project']) ? intval($_GET['project']) : null;
-$add = isset($_GET['add']);
+$add = isset($_GET['add']) || isset($_POST['add']);;
+$add_project = isset($_GET['add_project']) || isset($_POST['add_project']);
 $login = isset($_GET['login']);
 $register = isset($_GET['register']) || isset($_POST['register']);
 
@@ -43,6 +44,9 @@ if (isset($_GET['show_completed'])) {
   header($header_line);
   exit;
 }
+
+// показывать или нет выполненные задачи
+$show_complete_tasks = isset($_COOKIE['showCompleteTasks']) ? (int) $_COOKIE['showCompleteTasks'] === 1 : false;
 
 if (isset($_SESSION["user"])) {
   $current_user = selectData($connection, "SELECT * FROM users WHERE email = ?", [$_SESSION["user"]["email"]])[0];
@@ -69,37 +73,33 @@ if (isset($_SESSION["user"])) {
   }
 
   $tasks_list = selectData($connection, "SELECT * FROM tasks WHERE user_id = ?", [$current_user["id"]]);;
-  // показывать или нет выполненные задачи
-  $show_complete_tasks = isset($_COOKIE['showCompleteTasks']) ? (int) $_COOKIE['showCompleteTasks'] === 1 : false;
-
   // данные для создания нового задания
   $new_task_data  = [
     "name" => (isset($_POST["name"]) ? htmlspecialchars($_POST["name"]) : ""),
     "project_id" => (isset($_POST["project"]) ? intval($_POST["project"]) : $default_project_id),
-    "complete_until" => (isset($_POST["date"]) ? $_POST["date"] : ""),
-    "file" => (isset($_POST["preview"]) ? $_POST["preview"] : ""),
+    "file" => (isset($_POST["preview"]) ? $_POST["preview"] : null),
     "user_id" => $current_user["id"]
   ];
-
+  $complete_until = (isset($_POST["date"]) ? $_POST["date"] : "");
   // сохранение новой задачи
   if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["add"])) {
+    if ($complete_until !== "") {
+      $new_task_data["complete_until"] = $complete_until;
+    }
     $errors = validateForm($required_task, $rules_task, $new_task_data);
     if (!count($errors)) {
-      if (isset($_FILES["preview"]["name"])) {
-        $new_file_path = __DIR__ . '/' . $_FILES["preview"]["name"];
+      if (isset($new_task_data["complete_until"])) {
+        $new_task_data["complete_until"] = date_format(date_create($new_task_data["complete_until"]), 'Y-m-d H:i:s');
+      }
+
+      if (isset($_FILES["preview"]["name"]) && $_FILES["preview"]["name"] !== "") {
+        $new_file_path = __DIR__ . DIRECTORY_SEPARATOR . $_FILES["preview"]["name"];
         move_uploaded_file($_FILES["preview"]["tmp_name"], $new_file_path);
         $new_task_data["file"] = $new_file_path;
       }
-      if ($new_task_data["complete_until"] !== "") {
-        $new_task_data["complete_until"] = date_format(date_create($new_task_data["complete_until"]), 'Y-m-d H:i:s');
-      } else {
-        unset($new_task_data["complete_until"]);
-      }
       $insert_result = insertData($connection, "tasks", $new_task_data);
       if ($insert_result) {
-        $tasks_list = selectData($connection,
-          "SELECT * FROM tasks WHERE user_id = ?",
-          [$current_user["id"]]);
+        header("Location: /index.php");
       } else {
         $errors["name"] = "Ошибка сохранения. Повторите ещё раз.";
       }
@@ -138,11 +138,38 @@ if (isset($_SESSION["user"])) {
   ]);
 
   // модальное окно добавления задачи
-  $show_modal = $add || count($errors);
-  if ($show_modal) {
+  if ($add) {
+    $show_modal = $add;
     $modal_content = renderTemplate('./templates/modal.php', [
       'data' => $new_task_data,
+      'complete_until' => $complete_until,
       'projects_list' => $projects_list,
+      'errors' => $errors
+      ]);
+    print($modal_content);
+  }
+
+  $new_project = [
+    "name" => (isset($_POST["name"]) ? htmlspecialchars($_POST["name"]) : ""),
+    "user_id" => $current_user["id"]];
+  // сохранение нового проекта
+  if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["add_project"])) {
+    $errors = validateForm(["name"], [], $new_project);
+    if (!count($errors)) {
+      $insert_result = insertData($connection, "projects", $new_project);
+      if ($insert_result) {
+        header("Location: /index.php");
+      } else {
+        $errors["name"] = "Ошибка сохранения. Повторите ещё раз.";
+      }
+    }
+  }
+
+  // модальное окно добавления проекта
+  if ($add_project) {
+    $show_modal = $add_project;
+    $modal_content = renderTemplate('./templates/add-project.php', [
+      'data' => $new_project,
       'errors' => $errors
       ]);
     print($modal_content);
@@ -152,9 +179,13 @@ if (isset($_SESSION["user"])) {
   if (isset($_GET["complete_task"])) {
     $task_id = intval($_GET["complete_task"]);
     if ($task_id) {
+      $task = selectData($connection,
+        "SELECT completed_at FROM tasks WHERE id = ?",
+        [$task_id])[0];
+      $new_completed_at = !isset($task["completed_at"]) ? date('Y-m-d H:i:s', time()) : NULL;
       $update_result = execQuery($connection,
         "UPDATE tasks SET completed_at = ? WHERE id = ?",
-        [date('Y-m-d H:i:s', time()), $task_id]);
+        [$new_completed_at, $task_id]);
       if ($update_result) {
         $header_line = "Location: /index.php" . (isset($_GET['project']) ? '?project=' . $_GET['project'] : '');
         header($header_line);
@@ -166,7 +197,28 @@ if (isset($_SESSION["user"])) {
       	exit();
       }
     }
-   }
+  }
+
+  // Удаление задачи
+  if (isset($_GET["delete_task"])) {
+    $task_id = intval($_GET["delete_task"]);
+    if ($task_id) {
+      $delete_result = execQuery($connection,
+        "DELETE FROM tasks WHERE id = ?",
+        [$task_id]);
+      if ($delete_result) {
+        $header_line = "Location: /index.php" . (isset($_GET['project']) ? '?project=' . $_GET['project'] : '');
+        header($header_line);
+      } else {
+        $error_content = renderTemplate('templates/error.php', [
+          "error" => "Ошибка удаления задачи"
+        ]);
+      	print($error_content);
+      	exit();
+      }
+    }
+  }
+
 } else {
   if ($register) {
     $default_projects_list = ["Входящие", "Учеба", "Работа", "Домашние дела", "Авто"];
@@ -178,6 +230,7 @@ if (isset($_SESSION["user"])) {
     // регистрация нового пользователя
     if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["register"])) {
       $required_user = ["email", "password", "name"];
+      $user["password"] = $form_password;
       $errors = validateForm($required_user, $rules_user, $user);
       if (!count($errors)) {
         if (!searchUserByEmail($connection, $user["email"])) {

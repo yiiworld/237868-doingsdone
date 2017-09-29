@@ -10,13 +10,12 @@ require_once('mysql_helper.php');
 * @return array $result Результирующий код шаблона
 */
 function renderTemplate ($template_path, $template_data) {
+  $result = '';
   if (file_exists($template_path)) {
     extract($template_data);
     ob_start();
     require_once($template_path);
     $result = ob_get_clean();
-  } else {
-    $result = '';
   }
   return $result;
 }
@@ -34,7 +33,7 @@ function renderTemplate ($template_path, $template_data) {
 function find_project_tasks($connection, $project_id, $user, $tasks, $show_complete_tasks) {
   $result = [];
   if ($project_id) {
-    $sql = "SELECT id, name, complete_until, completed_at FROM tasks WHERE project_id = ?" .
+    $sql = "SELECT * FROM tasks WHERE project_id = ?" .
       (!$show_complete_tasks ? " AND completed_at IS NULL" : "");
     $result = selectData($connection, $sql, [$project_id]);
   } else {

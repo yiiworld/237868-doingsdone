@@ -56,14 +56,28 @@
         <tr class="tasks__item task <?php if ($task["completed_at"]):?> task--completed <?php endif;?> ">
             <td class="task__select">
                 <label class="checkbox task__checkbox">
-                    <input class="checkbox__input visually-hidden" type="checkbox" <?php if ($task["completed_at"]):?> checked <?php endif;?> >
+                    <input class="checkbox__input visually-hidden" type="checkbox" name="checked_task" value="<?=$task["id"]?>" <?php if ($task["completed_at"]):?> checked <?php endif;?> >
                     <span class="checkbox__text"><?=htmlspecialchars($task["name"])?></span>
                 </label>
             </td>
+
+            <td class="task__file">
+              <?php
+              $splitted_file_path = explode(DIRECTORY_SEPARATOR, $task["file"]);
+              $filename = $splitted_file_path[count($splitted_file_path) - 1];
+              if (isset($task["file"])): ?>
+                <a class="download-link" href="<?php print("/" . $filename); ?>">
+                  <?php
+                    print($filename);
+                  ?>
+                </a>
+              <?php endif; ?>
+            </td>
+
             <td class="task__date"><?=date_format(date_create($task["complete_until"]), 'd.m.Y')?></td>
 
             <td class="task__controls">
-              <button class="expand-control" type="button" name="button">Выполнить первое задание</button>
+              <button class="expand-control" type="button" name="button">Открыть список команд</button>
 
               <ul class="expand-list hidden">
                   <li class="expand-list__item">
@@ -73,7 +87,9 @@
                   </li>
 
                   <li class="expand-list__item">
-                      <a href="#">Удалить</a>
+                    <a href="/?delete_task=<?=$task["id"]?><?php if (isset($project_id)):?>&project=<?=$project_id?><?php endif;?>">
+                      Удалить
+                    </a>
                   </li>
               </ul>
             </td>

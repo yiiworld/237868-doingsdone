@@ -30,7 +30,7 @@
 
         <div class="form__row">
             <label class="form__label" for="date">Дата выполнения <sup>*</sup></label>
-            <input class="form__input form__input--date <?php if (isset($errors["complete_until"])): ?> form__input--error <?php endif; ?>" type="text" name="date" id="date" value="<?=$data["complete_until"]?>" placeholder="Введите дату в формате ДД.ММ.ГГГГ">
+            <input class="form__input form__input--date <?php if (isset($errors["complete_until"])): ?> form__input--error <?php endif; ?>" type="text" name="date" id="date" value="<?=$complete_until?>" placeholder="Введите дату в формате ДД.ММ.ГГГГ">
             <?php if (isset($errors["complete_until"])): ?>
               <span class="form__message"><?=$errors["complete_until"]?></span>
             <?php endif; ?>
