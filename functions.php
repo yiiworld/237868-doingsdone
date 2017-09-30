@@ -37,7 +37,9 @@ function find_project_tasks($connection, $project_id, $user, $tasks, $show_compl
       (!$show_complete_tasks ? " AND completed_at IS NULL" : "");
     $result = selectData($connection, $sql, [$project_id]);
   } else {
-    $result = $tasks;
+    $result = $show_complete_tasks ? $tasks : array_filter($tasks, function ($var) {
+      return is_null($var["completed_at"]);
+    });
   }
   return $result;
 }
@@ -68,7 +70,7 @@ function validateDate($value) {
   if ($value)  {
     $date = explode(" ", $value);
     $tmp = explode(".", $date[0]);
-    if (!checkdate($tmp[1], $tmp[0], $tmp[2])) {
+    if (count($tmp) !== 3 || !checkdate($tmp[1], $tmp[0], $tmp[2])) {
       $error = "Введите дату в формате ДД.ММ.ГГГГ";
     } else {
       $tmp = strtotime($value);

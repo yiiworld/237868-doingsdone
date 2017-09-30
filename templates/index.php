@@ -2,7 +2,7 @@
   <h2 class="content__main-heading">Список задач</h2>
 
   <form class="search-form" action="index.php" method="post">
-      <input class="search-form__input" type="text" name="task_search_text" value="<?=$task_search_text?>" placeholder="Поиск по задачам">
+      <input class="search-form__input" type="text" name="task_search_text" value="<?=htmlspecialchars($task_search_text)?>" placeholder="Поиск по задачам">
 
       <input class="search-form__submit" type="submit" name="task_search" value="Искать">
   </form>
@@ -66,7 +66,7 @@
             <td class="task__file">
               <?php
               $splitted_file_path = explode(DIRECTORY_SEPARATOR, $task["file"]);
-              $filename = $splitted_file_path[count($splitted_file_path) - 1];
+              $filename = htmlspecialchars($splitted_file_path[count($splitted_file_path) - 1]);
               if (isset($task["file"])): ?>
                 <a class="download-link" href="<?php print("/" . $filename); ?>">
                   <?php
@@ -76,7 +76,13 @@
               <?php endif; ?>
             </td>
 
-            <td class="task__date"><?=date_format(date_create($task["complete_until"]), 'd.m.Y')?></td>
+            <td class="task__date">
+              <?php
+                if (isset($task["complete_until"])) {
+                  print(date_format(date_create($task["complete_until"]), 'd.m.Y'));
+                }
+              ?>
+            </td>
 
             <td class="task__controls">
               <button class="expand-control" type="button" name="button">Открыть список команд</button>
