@@ -2,6 +2,10 @@
   <h2 class="content__main-heading">Регистрация аккаунта</h2>
 
   <form class="form" action="index.php" method="post">
+    <?php if (count($errors) !== 0): ?>
+      <p class="error-massage">Пожалуйста, исправьте ошибки в форме</p>
+    <?php endif; ?>
+
     <div class="form__row">
       <label class="form__label" for="email">E-mail <sup>*</sup></label>
 
@@ -30,9 +34,6 @@
     </div>
 
     <div class="form__row form__row--controls">
-      <?php if (count($errors) !== 0): ?>
-        <p class="error-massage">Пожалуйста, исправьте ошибки в форме</p>
-      <?php endif; ?>
       <input class="button" type="submit" name="register" value="Зарегистрироваться">
     </div>
   </form>

@@ -4,6 +4,10 @@
   <h2 class="modal__heading">Добавление проекта</h2>
 
   <form class="form" method="post" action="index.php">
+    <?php if (count($errors) !== 0): ?>
+      <p class="error-massage">Пожалуйста, исправьте ошибки в форме</p>
+    <?php endif; ?>
+
     <div class="form__row">
       <label class="form__label" for="name">Название <sup>*</sup></label>
 

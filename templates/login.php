@@ -8,6 +8,10 @@
   <?php endif; ?>
 
   <form class="form" class="" action="index.php" method="post">
+    <?php if (count($errors) !== 0): ?>
+      <p class="error-massage">Вы ввели неверный email/пароль</p>
+    <?php endif; ?>
+
     <div class="form__row">
       <label class="form__label" for="email">E-mail <sup>*</sup></label>
 
