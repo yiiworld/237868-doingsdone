@@ -228,6 +228,28 @@ if (isset($_SESSION["user"])) {
     }
   }
 
+  // Дублирование задачи
+  if (isset($_GET["duplicate_task"])) {
+    $task_id = intval($_GET["duplicate_task"]);
+    if ($task_id) {
+      $duplicate_result = execQuery($connection,
+        "INSERT INTO tasks (name, complete_until, completed_at, project_id, user_id) " .
+        "SELECT name, complete_until, completed_at, project_id, user_id " .
+        "FROM tasks WHERE id = ?",
+        [$task_id]);
+      if ($duplicate_result) {
+        $header_line = "Location: /index.php" . (isset($_GET['project']) ? '?project=' . $_GET['project'] : '');
+        header($header_line);
+      } else {
+        $error_content = renderTemplate('templates/error.php', [
+          "error" => "Ошибка дублирования задачи"
+        ]);
+      	print($error_content);
+      	exit();
+      }
+    }
+  }
+
 } else {
   if ($register) {
     $default_projects_list = ["Входящие", "Учеба", "Работа", "Домашние дела", "Авто"];

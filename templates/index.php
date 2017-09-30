@@ -99,6 +99,12 @@
                       Удалить
                     </a>
                   </li>
+
+                  <li class="expand-list__item">
+                    <a href="/?duplicate_task=<?=$task["id"]?><?php if (isset($project_id)):?>&project=<?=$project_id?><?php endif;?>">
+                      Дублировать
+                    </a>
+                  </li>
               </ul>
             </td>
         </tr>
