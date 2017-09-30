@@ -25,6 +25,7 @@ $add = isset($_GET['add']) || isset($_POST['add']);;
 $add_project = isset($_GET['add_project']) || isset($_POST['add_project']);
 $login = isset($_GET['login']);
 $register = isset($_GET['register']) || isset($_POST['register']);
+$task_search = isset($_POST['task_search']);
 
 $errors = [];
 $show_modal = false; // показывать ли модальное окно
@@ -130,11 +131,19 @@ if (isset($_SESSION["user"])) {
       $filtered_tasks = find_project_tasks($connection, $project_id, $current_user, $tasks_list, $show_complete_tasks);
   }
 
+  $task_search_text = isset($_POST["task_search_text"]) ? $_POST["task_search_text"] : "";
+  if ($task_search && trim($task_search_text) !== "") {
+    $filtered_tasks = selectData($connection,
+      "SELECT * FROM tasks WHERE name LIKE ? AND user_id = ?",
+      ['%' . trim($task_search_text) . '%', $current_user["id"]]);
+  }
+
   $page_content = renderTemplate('./templates/index.php', [
     'tasks_list' => $filtered_tasks,
     'show_complete_tasks' => $show_complete_tasks,
     'project_id' => $project_id,
-    'tasks_type' => $tasks_type
+    'tasks_type' => $tasks_type,
+    'task_search_text' => $task_search_text
   ]);
 
   // модальное окно добавления задачи

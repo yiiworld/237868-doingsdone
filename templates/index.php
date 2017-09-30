@@ -2,9 +2,9 @@
   <h2 class="content__main-heading">Список задач</h2>
 
   <form class="search-form" action="index.php" method="post">
-      <input class="search-form__input" type="text" name="" value="" placeholder="Поиск по задачам">
+      <input class="search-form__input" type="text" name="task_search_text" value="<?=$task_search_text?>" placeholder="Поиск по задачам">
 
-      <input class="search-form__submit" type="submit" name="" value="Искать">
+      <input class="search-form__submit" type="submit" name="task_search" value="Искать">
   </form>
 
   <div class="tasks-controls">
@@ -56,8 +56,10 @@
         <tr class="tasks__item task <?php if ($task["completed_at"]):?> task--completed <?php endif;?> ">
             <td class="task__select">
                 <label class="checkbox task__checkbox">
-                    <input class="checkbox__input visually-hidden" type="checkbox" name="checked_task" value="<?=$task["id"]?>" <?php if ($task["completed_at"]):?> checked <?php endif;?> >
-                    <span class="checkbox__text"><?=htmlspecialchars($task["name"])?></span>
+                    <a href="/?complete_task=<?=$task["id"]?><?php if (isset($project_id)):?>&project=<?=$project_id?><?php endif;?>" style="color: inherit; text-decoration: none;">
+                      <input class="checkbox__input visually-hidden" type="checkbox" name="checked_task" value="<?=$task["id"]?>" <?php if ($task["completed_at"]):?> checked <?php endif;?> >
+                      <span class="checkbox__text"><?=htmlspecialchars($task["name"])?></span>
+                    </a>
                 </label>
             </td>
 
