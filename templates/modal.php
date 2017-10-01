@@ -7,7 +7,7 @@
         <?php if (count($errors) !== 0): ?>
           <p class="error-massage">Пожалуйста, исправьте ошибки в форме</p>
         <?php endif; ?>
-      
+
         <div class="form__row">
             <label class="form__label" for="name">Название <sup>*</sup></label>
 
@@ -33,7 +33,7 @@
         </div>
 
         <div class="form__row">
-            <label class="form__label" for="date">Дата выполнения <sup>*</sup></label>
+            <label class="form__label" for="date">Дата выполнения</label>
             <input class="form__input form__input--date <?php if (isset($errors["complete_until"])): ?> form__input--error <?php endif; ?>" type="text" name="date" id="date" value="<?=htmlspecialchars($complete_until)?>" placeholder="Введите дату в формате ДД.ММ.ГГГГ">
             <?php if (isset($errors["complete_until"])): ?>
               <span class="form__message"><?=$errors["complete_until"]?></span>
