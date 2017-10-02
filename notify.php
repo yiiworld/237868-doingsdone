@@ -1,8 +1,7 @@
 <?php
 require_once('vendor/autoload.php');
-require_once('functions.php');
+require_once('db_functions.php');
 require_once('init.php');
-
 
 $sql = "SELECT u.id, u.name AS username, u.email, t.name, DATE_FORMAT(t.complete_until, '%d-%m-%Y %h:%i') AS deadline FROM tasks AS t " .
       "JOIN users AS u ON t.user_id = u.id " .
